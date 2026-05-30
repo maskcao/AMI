@@ -1,0 +1,79 @@
+:root {
+  --ami-bg: #f1f5f9;
+  --ami-surface: #ffffff;
+  --ami-sidebar: #0f172a;
+  --ami-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --ami-sidebar-active: rgba(59, 130, 246, 0.18);
+  --ami-accent: #3b82f6;
+  --ami-accent-soft: #eff6ff;
+  --ami-text: #0f172a;
+  --ami-text-secondary: #64748b;
+  --ami-border: #e2e8f0;
+  --ami-radius: 12px;
+  --ami-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+  --ami-font:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--ami-font);
+  color: var(--ami-text);
+  background: var(--ami-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+/* Element Plus overrides */
+.el-card {
+  border-radius: var(--ami-radius) !important;
+  border: 1px solid var(--ami-border) !important;
+  box-shadow: var(--ami-shadow) !important;
+}
+
+.el-card__header {
+  padding: 14px 20px !important;
+  font-weight: 600;
+  color: var(--ami-text);
+  border-bottom: 1px solid var(--ami-border) !important;
+}
+
+.el-table {
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-header-text-color: var(--ami-text-secondary);
+}
+
+.el-table th.el-table__cell {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.el-button--primary {
+  --el-button-bg-color: var(--ami-accent);
+  --el-button-border-color: var(--ami-accent);
+}
+
+.el-link.el-link--primary {
+  --el-link-text-color: var(--ami-accent);
+}
+
+.el-menu {
+  border-right: none !important;
+}
