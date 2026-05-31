@@ -1,18 +1,8 @@
-import type { IntelDetail } from '@/types/intel'
-import { buildIntelQualityHints, computeIntelQuality } from '@/utils/quality'
+import type { IntelDetail, IntelFigure } from '@/types/intel'
+import { mergeIntelFigures } from '@/utils/intel-figures'
 
-interface RawIntel {
-  id: number
-  title: string
-  disclosedAt: string | null
-  sourceName: string
-  sourceUrl: string
-  knowledgeIds: number[]
-  ingestStatus: IntelDetail['ingestStatus']
-  iocs: IntelDetail['iocs']
-  originalHtml: string
-  collectedAt: string
-  parseVersion: string
+interface RawIntel extends Omit<IntelDetail, 'figures'> {
+  figures: IntelFigure[]
 }
 
 const RAW: RawIntel[] = [
@@ -22,27 +12,81 @@ const RAW: RawIntel[] = [
       'Ten families of malicious samples are spreading using the Log4j2 vulnerability Now',
     disclosedAt: null,
     sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
     sourceUrl: 'https://blog.netlab.360.com/log4j2-spread/',
     knowledgeIds: [1001],
-    ingestStatus: 'published',
-    iocs: [],
-    originalHtml:
-      '<p>Multiple malware families are exploiting CVE-2021-44228 (Log4Shell) in the wild.</p><p>Ten distinct families observed in sampled telemetry.</p>',
+    knowledgeAction: 'updated',
+    ingestStatus: 'succeeded',
     collectedAt: '2026-05-28T08:00:00Z',
-    parseVersion: 'demo-1',
+    extractConfidence: 0.91,
+    iocCount: 0,
+    iocs: [],
+    figures: [
+      {
+        id: '4203-flow',
+        intelId: 4203,
+        title: 'Log4Shell 在野利用完整流程',
+        kind: 'attack-flow',
+        src: '/demo-figures/log4j-attack-flow.svg',
+        techniqueIds: ['T1190', 'T1059'],
+        caption: '从 JNDI 注入到多家族载荷扩散的端到端示意（报告配图）',
+      },
+      {
+        id: '4203-mitre',
+        intelId: 4203,
+        title: 'Enterprise ATT&CK 手法映射图',
+        kind: 'technique-map',
+        src: '/demo-figures/log4j-mitre-map.svg',
+        techniqueIds: ['T1190', 'T1059'],
+        caption: '报告原文中的 MITRE 战术—技术对照图',
+      },
+    ],
+    originalHtml:
+      '<p>Multiple malware families are exploiting CVE-2021-44228 (Log4Shell) in the wild.</p>' +
+      '<p>Ten distinct families observed in sampled telemetry.</p>' +
+      '<figure class="report-figure"><img src="/demo-figures/log4j-attack-flow.svg" alt="Log4Shell 攻击流程总览" /></figure>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: 'Log4Shell 在野利用，多恶意软件家族并发传播。',
+      suggestedTechniques: ['T1190', 'T1059'],
+      suggestedMalware: ['Log4j exploit loaders'],
+      suggestedCves: ['CVE-2021-44228'],
+    },
   },
   {
     id: 4205,
     title: 'CERT advisory: active Log4Shell exploitation in critical sectors',
     disclosedAt: '2026-05-18',
     sourceName: 'CERT',
+    collectSourceName: 'CERT 通告 RSS',
     sourceUrl: 'https://cert.example.invalid/advisory/log4shell-2026',
-    knowledgeIds: [1001],
-    ingestStatus: 'published',
-    iocs: [{ type: 'domain', value: 'log4j-c2.example.invalid', confidence: 'low' }],
-    originalHtml: '<p>National CERT confirms ongoing Log4Shell exploitation.</p>',
+    knowledgeIds: [1005],
+    knowledgeAction: 'created',
+    ingestStatus: 'succeeded',
     collectedAt: '2026-05-19T08:00:00Z',
-    parseVersion: 'demo-1',
+    extractConfidence: 0.88,
+    iocCount: 1,
+    iocs: [{ type: 'domain', value: 'log4j-c2.example.invalid', confidence: 'low' }],
+    figures: [
+      {
+        id: '4205-flow',
+        intelId: 4205,
+        title: '关键行业 Log4Shell 利用时间线',
+        kind: 'attack-flow',
+        src: '/demo-figures/log4j-attack-flow.svg',
+        techniqueIds: ['T1190'],
+      },
+    ],
+    originalHtml: '<p>National CERT confirms ongoing Log4Shell exploitation.</p>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: '国家级 CERT 确认关键行业持续遭受 Log4Shell 利用。',
+      suggestedTechniques: ['T1190'],
+      suggestedMalware: [],
+      suggestedCves: ['CVE-2021-44228'],
+    },
   },
   {
     id: 4234,
@@ -50,28 +94,50 @@ const RAW: RawIntel[] = [
       "Threat Alert: New update from Sysrv-hello, now infecting victims' webpages to push malicious exe to end users",
     disclosedAt: null,
     sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
     sourceUrl: 'https://blog.netlab.360.com/sysrv-hello-update/',
     knowledgeIds: [1002],
-    ingestStatus: 'published',
-    iocs: [
+    knowledgeAction: 'created',
+    ingestStatus: 'succeeded',
+    collectedAt: '2026-05-29T10:00:00Z',
+    extractConfidence: 0.85,
+    iocCount: 1,
+    iocs: [{ type: 'domain', value: 'malicious-cdn.example.invalid', confidence: 'medium' }],
+    figures: [
       {
-        type: 'domain',
-        value: 'malicious-cdn.example.invalid',
-        confidence: 'medium',
+        id: '4234-flow',
+        intelId: 4234,
+        title: 'Sysrv-hello 网页挂马投递链',
+        kind: 'attack-flow',
+        src: '/demo-figures/sysrv-delivery.svg',
+        techniqueIds: ['T1190'],
       },
     ],
-    originalHtml: '<p>Sysrv-hello campaign analysis and IOC list.</p>',
-    collectedAt: '2026-05-29T10:00:00Z',
-    parseVersion: 'demo-1',
+    originalHtml:
+      '<p>Sysrv-hello campaign analysis and IOC list.</p>' +
+      '<figure><img src="/demo-figures/sysrv-delivery.svg" alt="挂马投递示意图" /></figure>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: 'Sysrv-hello 通过被黑网页投递恶意可执行文件。',
+      suggestedTechniques: ['T1189', 'T1204'],
+      suggestedMalware: ['Sysrv-hello'],
+      suggestedCves: [],
+    },
   },
   {
     id: 4301,
     title: 'Mirai variant targets energy sector ICS exposed to internet',
     disclosedAt: '2026-05-20',
     sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
     sourceUrl: 'https://netlab.360.com/mirai-ics-energy/',
     knowledgeIds: [1003],
-    ingestStatus: 'published',
+    knowledgeAction: 'created',
+    ingestStatus: 'succeeded',
+    collectedAt: '2026-05-25T12:00:00Z',
+    extractConfidence: 0.9,
+    iocCount: 2,
     iocs: [
       { type: 'ip', value: '198.51.100.10', confidence: 'high' },
       {
@@ -80,68 +146,158 @@ const RAW: RawIntel[] = [
         confidence: 'low',
       },
     ],
+    figures: [
+      {
+        id: '4301-flow',
+        intelId: 4301,
+        title: 'Mirai 针对 ICS 暴露面攻击流程',
+        kind: 'attack-flow',
+        src: '/demo-figures/mirai-ics-flow.svg',
+        techniqueIds: ['T0886', 'T0814'],
+      },
+    ],
     originalHtml:
-      '<h2>Energy sector targeting</h2><p>Mirai variant observed against ICS-exposed assets.</p>',
-    collectedAt: '2026-05-25T12:00:00Z',
-    parseVersion: 'demo-1',
+      '<h2>Energy sector targeting</h2><p>Mirai variant observed against ICS-exposed assets.</p>' +
+      '<img src="/demo-figures/mirai-ics-flow.svg" alt="Mirai ICS 攻击流程" />',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: 'Mirai 变种针对能源行业暴露 ICS 资产。',
+      suggestedTechniques: ['T0814', 'T0886'],
+      suggestedMalware: ['Mirai'],
+      suggestedCves: [],
+    },
   },
   {
     id: 4320,
     title: 'Ransomware advisory: LockBit campaigns against manufacturing sector',
     disclosedAt: '2026-05-22',
     sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
     sourceUrl: 'https://blog.netlab.360.com/lockbit-manufacturing/',
     knowledgeIds: [1004],
-    ingestStatus: 'published',
-    iocs: [
-      { type: 'hash', value: 'a1b2c3d4e5f6789012345678901234567890abcd', confidence: 'medium' },
+    knowledgeAction: 'created',
+    ingestStatus: 'succeeded',
+    collectedAt: '2026-05-23T09:00:00Z',
+    extractConfidence: 0.87,
+    iocCount: 1,
+    iocs: [{ type: 'hash', value: 'a1b2c3d4e5f6789012345678901234567890abcd', confidence: 'medium' }],
+    figures: [
+      {
+        id: '4320-killchain',
+        intelId: 4320,
+        title: 'LockBit 双 extortion 完整攻击链',
+        kind: 'attack-flow',
+        src: '/demo-figures/lockbit-killchain.svg',
+        techniqueIds: ['T1566', 'T1486'],
+      },
     ],
     originalHtml:
-      '<p>LockBit 3.0 observed in manufacturing targets with double extortion.</p>',
-    collectedAt: '2026-05-23T09:00:00Z',
-    parseVersion: 'demo-1',
+      '<p>LockBit 3.0 observed in manufacturing targets with double extortion.</p>' +
+      '<figure><img src="/demo-figures/lockbit-killchain.svg" alt="LockBit 攻击链" /></figure>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: 'LockBit 3.0 制造行业双 extortion 活动。',
+      suggestedTechniques: ['T1486', 'T1027'],
+      suggestedMalware: ['LockBit'],
+      suggestedCves: [],
+    },
+  },
+  {
+    id: 4207,
+    title:
+      'Ten families of malicious samples are spreading using the Log4j2 vulnerability Now',
+    disclosedAt: null,
+    sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
+    sourceUrl: 'https://blog.netlab.360.com/log4j2-spread/?mirror=1',
+    knowledgeIds: [1001],
+    knowledgeAction: 'updated',
+    ingestStatus: 'succeeded',
+    collectedAt: '2026-05-30T09:00:00Z',
+    extractConfidence: 0.89,
+    iocCount: 0,
+    iocs: [],
+    figures: [],
+    originalHtml:
+      '<p>Re-crawl: same report title — merged into existing attack knowledge #1001 per title-match policy.</p>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: {
+      summary: 'Log4Shell 在野利用（重复采集，同标题更新）。',
+      suggestedTechniques: ['T1190', 'T1059'],
+      suggestedMalware: ['Log4j exploit loaders'],
+      suggestedCves: ['CVE-2021-44228'],
+    },
   },
   {
     id: 4310,
-    title: 'Weekly threat feed digest — unlinked draft sample',
+    title: 'Weekly threat feed digest — extraction retry',
     disclosedAt: null,
     sourceName: '360',
+    collectSourceName: '示例公众号历史页',
     sourceUrl: 'https://blog.netlab.360.com/weekly-digest/',
     knowledgeIds: [],
-    ingestStatus: 'pending_review',
-    iocs: [],
-    originalHtml: '<p>Digest awaiting analyst linking to attack knowledge.</p>',
+    knowledgeAction: 'pending',
+    ingestStatus: 'failed',
     collectedAt: '2026-05-30T06:00:00Z',
-    parseVersion: 'demo-1',
+    extractConfidence: null,
+    iocCount: 0,
+    iocs: [],
+    figures: [],
+    originalHtml: '<p>Digest page parse timeout during AI extraction.</p>',
+    parseVersion: 'html-v1',
+    enrichVersion: 'llm-qwen-2026-05',
+    aiExtract: null,
+    pipelineError: 'LLM timeout after 120s; will retry with backoff',
+  },
+  {
+    id: 4325,
+    title: 'New vendor bulletin — queued for parse',
+    disclosedAt: null,
+    sourceName: 'CERT',
+    collectSourceName: 'CERT 通告 RSS',
+    sourceUrl: 'https://cert.example.invalid/bulletin/4325',
+    knowledgeIds: [],
+    knowledgeAction: 'pending',
+    ingestStatus: 'queued',
+    collectedAt: '2026-05-30T10:15:00Z',
+    extractConfidence: null,
+    iocCount: 0,
+    iocs: [],
+    figures: [],
+    originalHtml: '',
+    parseVersion: '',
+    enrichVersion: '',
+    aiExtract: null,
+  },
+  {
+    id: 4326,
+    title: 'ICS exploit write-up — parsing HTML',
+    disclosedAt: null,
+    sourceName: '360',
+    collectSourceName: '360 Netlab 博客',
+    sourceUrl: 'https://blog.netlab.360.com/ics-writeup/',
+    knowledgeIds: [],
+    knowledgeAction: 'pending',
+    ingestStatus: 'parsing',
+    collectedAt: '2026-05-30T10:20:00Z',
+    extractConfidence: null,
+    iocCount: 0,
+    iocs: [],
+    figures: [],
+    originalHtml: '<p>Partial download…</p>',
+    parseVersion: 'html-v1',
+    enrichVersion: '',
+    aiExtract: null,
   },
 ]
 
-function toDetail(raw: RawIntel): IntelDetail {
-  const input = {
-    disclosedAt: raw.disclosedAt,
-    originalHtml: raw.originalHtml,
-    iocCount: raw.iocs.length,
-    knowledgeIds: raw.knowledgeIds,
-  }
-  return {
-    id: raw.id,
-    title: raw.title,
-    disclosedAt: raw.disclosedAt,
-    sourceName: raw.sourceName,
-    sourceUrl: raw.sourceUrl,
-    knowledgeIds: raw.knowledgeIds,
-    ingestStatus: raw.ingestStatus,
-    iocCount: raw.iocs.length,
-    iocs: raw.iocs,
-    originalHtml: raw.originalHtml,
-    collectedAt: raw.collectedAt,
-    parseVersion: raw.parseVersion,
-    qualityScore: computeIntelQuality(input),
-    qualityHints: buildIntelQualityHints(input),
-  }
-}
-
-export const INTEL_DETAILS: IntelDetail[] = RAW.map(toDetail)
+export const INTEL_DETAILS: IntelDetail[] = RAW.map((item) => ({
+  ...item,
+  figures: mergeIntelFigures(item.figures, item.originalHtml, item.id),
+}))
 
 export function getIntelById(id: number): IntelDetail | undefined {
   return INTEL_DETAILS.find((item) => item.id === id)

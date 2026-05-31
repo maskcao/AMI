@@ -25,7 +25,25 @@ const infraRoleLabel: Record<string, string> = {
 
   <section class="block">
     <h3>攻击手法 (MITRE ATT&CK)</h3>
-    <AttackTechniques :techniques="detail.techniques" :matrix="attackMatrix" />
+    <AttackTechniques
+      :techniques="detail.techniques"
+      :matrix="attackMatrix"
+      :evidence-figures="detail.evidenceFigures"
+    />
+  </section>
+
+  <section v-if="detail.procedures.length" class="block">
+    <h3>Procedure / 证据片段</h3>
+    <el-table :data="detail.procedures" size="small" stripe>
+      <el-table-column prop="techniqueId" label="Technique" width="110" />
+      <el-table-column prop="text" label="描述" min-width="280" show-overflow-tooltip />
+      <el-table-column label="证据情报" width="100">
+        <template #default="{ row }">
+          <span v-if="row.evidenceIntelId">#{{ row.evidenceIntelId }}</span>
+          <span v-else class="muted">—</span>
+        </template>
+      </el-table-column>
+    </el-table>
   </section>
 
   <section class="block">
@@ -98,5 +116,8 @@ const infraRoleLabel: Record<string, string> = {
   font-size: 15px;
   font-weight: 600;
   color: #303133;
+}
+.muted {
+  color: #c0c4cc;
 }
 </style>

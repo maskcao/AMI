@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getKnowledge } from '@/api/knowledge'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { getKnowledge, listKnowledge, mergeKnowledge, publishKnowledge, updateKnowledge } from '@/api/knowledge'
 import AppLayout from '@/components/AppLayout.vue'
-import PageShell from '@/components/PageShell.vue'
 import KnowledgeDimensionPanels from '@/components/KnowledgeDimensionPanels.vue'
+import KnowledgeEvidenceGallery from '@/components/KnowledgeEvidenceGallery.vue'
+import KnowledgePipelineCard from '@/components/KnowledgePipelineCard.vue'
 import KnowledgeRelationOverview from '@/components/KnowledgeRelationOverview.vue'
 import LinkedIntelList from '@/components/LinkedIntelList.vue'
+import PageShell from '@/components/PageShell.vue'
 import QualityScore from '@/components/QualityScore.vue'
 import { ALL_INDUSTRIES, resolveAttackMatrix } from '@/constants/industry'
-import type { KnowledgeDetail } from '@/types/knowledge'
+import type { KnowledgeDetail, KnowledgeSummary } from '@/types/knowledge'
+import { KNOWLEDGE_STATUS_LABELS } from '@/utils/knowledge-review'
 import {
   buildKnowledgeQualityHints,
   computeKnowledgeQuality,
@@ -19,9 +23,14 @@ import {
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
+const saving = ref(false)
 const activeTab = ref('dimensions')
 const detail = ref<KnowledgeDetail | null>(null)
 const editIndustries = ref<string[]>([])
+const editSummary = ref('')
+const mergeDialogVisible = ref(false)
+const mergeTargetId = ref<number | null>(null)
+const mergeCandidates = ref<KnowledgeSummary[]>([])
 
 const knowledgeId = computed(() => Number(route.params.id))
 const attackMatrix = computed(() => resolveAttackMatrix(editIndustries.value))
@@ -31,6 +40,7 @@ const liveQualityScore = computed(() => {
   const base = knowledgeQualityInput({
     ...detail.value,
     targetIndustries: editIndustries.value,
+    summary: editSummary.value || null,
   })
   return computeKnowledgeQuality(base)
 })
@@ -41,8 +51,18 @@ const liveQualityHints = computed(() => {
     knowledgeQualityInput({
       ...detail.value,
       targetIndustries: editIndustries.value,
+      summary: editSummary.value || null,
     }),
   )
+})
+
+const isDirty = computed(() => {
+  if (!detail.value) return false
+  const industriesChanged =
+    editIndustries.value.length !== detail.value.targetIndustries.length ||
+    editIndustries.value.some((i, idx) => i !== detail.value!.targetIndustries[idx])
+  const summaryChanged = (editSummary.value || '') !== (detail.value.summary || '')
+  return industriesChanged || summaryChanged
 })
 
 async function load() {
@@ -55,9 +75,83 @@ async function load() {
     }
     detail.value = data
     editIndustries.value = [...data.targetIndustries]
+    editSummary.value = data.summary ?? ''
+    activeTab.value = data.evidenceFigures.length ? 'figures' : 'dimensions'
   } finally {
     loading.value = false
   }
+}
+
+async function saveEdits() {
+  if (!detail.value || !isDirty.value) return
+  saving.value = true
+  try {
+    const updated = await updateKnowledge(detail.value.id, {
+      summary: editSummary.value.trim() || null,
+      targetIndustries: [...editIndustries.value],
+    })
+    if (updated) {
+      detail.value = updated
+      editIndustries.value = [...updated.targetIndustries]
+      editSummary.value = updated.summary ?? ''
+      ElMessage.success('已保存修改')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+async function publish() {
+  if (!detail.value || detail.value.status === 'published') return
+  await ElMessageBox.confirm('确认发布该攻击知识？发布后仍可在质量不足时标记为待复核。', '发布知识', {
+    type: 'info',
+  })
+  saving.value = true
+  try {
+    const updated = await publishKnowledge(detail.value.id)
+    if (updated) {
+      detail.value = updated
+      ElMessage.success('已发布')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+async function openMergeDialog() {
+  const result = await listKnowledge({ sortOrder: 'desc' })
+  mergeCandidates.value = result.items.filter((k) => k.id !== knowledgeId.value)
+  mergeTargetId.value = mergeCandidates.value[0]?.id ?? null
+  mergeDialogVisible.value = true
+}
+
+async function confirmMerge() {
+  if (!detail.value || mergeTargetId.value == null) return
+  await ElMessageBox.confirm(
+    `将把当前知识 #${detail.value.id} 的支撑情报合并到 #${mergeTargetId.value}，并删除当前条目（Demo）。`,
+    '合并知识',
+    { type: 'warning' },
+  )
+  saving.value = true
+  try {
+    const ok = await mergeKnowledge({
+      sourceId: detail.value.id,
+      targetId: mergeTargetId.value,
+    })
+    if (ok) {
+      ElMessage.success('合并完成')
+      mergeDialogVisible.value = false
+      router.push({ name: 'knowledge-detail', params: { id: String(mergeTargetId.value) } })
+    } else {
+      ElMessage.error('合并失败')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+function scrollToSummary() {
+  document.getElementById('knowledge-summary-edit')?.scrollIntoView({ behavior: 'smooth' })
 }
 
 function goBack() {
@@ -73,10 +167,38 @@ onMounted(load)
     <PageShell v-loading="loading">
       <template v-if="detail">
         <div class="detail-top">
-          <el-button text type="primary" @click="goBack">← 返回知识库</el-button>
+          <div class="detail-top-row">
+            <el-button text type="primary" @click="goBack">← 返回知识库</el-button>
+            <div class="detail-actions">
+              <el-button
+                v-if="detail.status === 'draft'"
+                type="success"
+                :loading="saving"
+                @click="publish"
+              >
+                发布
+              </el-button>
+              <el-button :loading="saving" @click="openMergeDialog">合并到其他知识</el-button>
+              <el-button type="primary" :disabled="!isDirty" :loading="saving" @click="saveEdits">
+                保存修改
+              </el-button>
+            </div>
+          </div>
           <h1 class="detail-title">{{ detail.title }}</h1>
-          <p class="detail-meta">知识 ID {{ detail.id }} · 更新 {{ detail.updatedAt }}</p>
+          <p class="detail-meta">
+            知识 ID {{ detail.id }}
+            ·
+            <el-tag :type="detail.status === 'published' ? 'success' : 'info'" size="small">
+              {{ KNOWLEDGE_STATUS_LABELS[detail.status] }}
+            </el-tag>
+            <el-tag v-if="detail.needsReview" type="warning" size="small" class="review-tag">
+              待复核
+            </el-tag>
+            · 更新 {{ detail.updatedAt.replace('T', ' ').slice(0, 16) }}
+          </p>
         </div>
+
+        <KnowledgePipelineCard :pipeline="detail.pipeline" />
 
         <el-card shadow="never" class="meta-card">
           <el-descriptions :column="3" border size="small">
@@ -112,20 +234,40 @@ onMounted(load)
             <el-descriptions-item label="质量评分">
               <QualityScore :score="liveQualityScore" />
               <ul v-if="liveQualityHints.length" class="quality-hints">
-                <li v-for="hint in liveQualityHints" :key="hint">{{ hint }}</li>
+                <li v-for="hint in liveQualityHints" :key="hint">
+                  <el-link type="warning" @click="scrollToSummary">{{ hint }}</el-link>
+                </li>
               </ul>
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
 
-        <el-card shadow="never" class="summary-card">
-          <h3>知识概述</h3>
-          <p v-if="detail.summary" class="summary-text">{{ detail.summary }}</p>
-          <el-empty v-else description="暂无概述" :image-size="64" />
+        <el-card id="knowledge-summary-edit" shadow="never" class="summary-card">
+          <div class="summary-header">
+            <h3>知识概述</h3>
+            <span v-if="isDirty" class="dirty-hint">有未保存修改</span>
+          </div>
+          <el-input
+            v-model="editSummary"
+            type="textarea"
+            :rows="4"
+            placeholder="填写攻击知识概述，便于检索与复核"
+          />
         </el-card>
 
         <el-card shadow="never">
           <el-tabs v-model="activeTab">
+            <el-tab-pane name="figures">
+              <template #label>
+                攻击图示
+                <el-badge
+                  v-if="detail.evidenceFigures.length"
+                  :value="detail.evidenceFigures.length"
+                  class="tab-badge"
+                />
+              </template>
+              <KnowledgeEvidenceGallery :figures="detail.evidenceFigures" />
+            </el-tab-pane>
             <el-tab-pane label="攻击维度" name="dimensions">
               <KnowledgeDimensionPanels :detail="detail" :attack-matrix="attackMatrix" />
             </el-tab-pane>
@@ -146,12 +288,46 @@ onMounted(load)
         </template>
       </el-result>
     </PageShell>
+
+    <el-dialog v-model="mergeDialogVisible" title="合并知识（Demo）" width="480px">
+      <p class="merge-hint">将当前知识的支撑情报并入目标条目后，删除当前知识。仅相同标题情报在流水线中自动合并。</p>
+      <el-form label-width="100px">
+        <el-form-item label="目标知识">
+          <el-select v-model="mergeTargetId" placeholder="选择目标" style="width: 100%">
+            <el-option
+              v-for="k in mergeCandidates"
+              :key="k.id"
+              :label="`#${k.id} ${k.title}`"
+              :value="k.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="mergeDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" :disabled="!mergeTargetId" @click="confirmMerge">
+          确认合并
+        </el-button>
+      </template>
+    </el-dialog>
   </AppLayout>
 </template>
 
 <style scoped>
 .detail-top {
   margin-bottom: 16px;
+}
+.detail-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.detail-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .detail-title {
   margin: 8px 0 0;
@@ -162,20 +338,32 @@ onMounted(load)
   margin: 4px 0 0;
   font-size: 12px;
   color: #909399;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.review-tag {
+  margin-left: 0;
 }
 .meta-card,
 .summary-card {
   margin-bottom: 16px;
 }
+.summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
 .summary-card h3 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
 }
-.summary-text {
-  margin: 0;
-  line-height: 1.7;
-  color: #606266;
+.dirty-hint {
+  font-size: 12px;
+  color: #e6a23c;
 }
 .quality-hints {
   margin: 8px 0 0;
@@ -187,6 +375,16 @@ onMounted(load)
   margin: 0 0 12px;
   font-size: 13px;
   color: #909399;
+}
+.tab-badge {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.merge-hint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
 }
 .actor-tag {
   margin-right: 6px;

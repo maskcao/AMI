@@ -16,6 +16,10 @@ function goKnowledgeList() {
 function goKnowledge(id: number) {
   router.push({ name: 'knowledge-detail', params: { id: String(id) } })
 }
+
+function goVulnExploit() {
+  router.push({ path: '/analytics/cve' })
+}
 </script>
 
 <template>
@@ -47,13 +51,13 @@ function goKnowledge(id: number) {
         label="情报采集量"
         :value="ops.intelTotalCount"
         accent="#06b6d4"
-        :hint="`已发布 ${ops.intelPublishedCount} · 待审 ${ops.intelPendingCount}`"
+        :hint="`已完成 ${ops.intelSucceededCount} · 处理中 ${ops.intelProcessingCount}`"
       />
       <StatCard
-        label="已关联知识的情报"
-        :value="ops.intelLinkedCount"
-        accent="#22c55e"
-        :hint="`未关联 ${ops.intelTotalCount - ops.intelLinkedCount} 条`"
+        label="流水线失败"
+        :value="ops.intelFailedCount"
+        accent="#ef4444"
+        :hint="`已写入知识 ${ops.intelLinkedCount} 条`"
       />
     </div>
 
@@ -65,13 +69,27 @@ function goKnowledge(id: number) {
       <el-tag v-if="dashboard.icsKnowledgeCount" type="warning" effect="plain" round>
         ICS 矩阵知识 {{ dashboard.icsKnowledgeCount }} 条
       </el-tag>
-      <el-tag type="info" effect="plain" round>
-        在野 CVE {{ dashboard.inWildCveCount }} / {{ dashboard.snapshot.cveCount }}
+      <el-tag type="info" effect="plain" round class="click-tag" @click="goVulnExploit">
+        在野漏洞利用 {{ dashboard.inWildCveCount }} / {{ dashboard.snapshot.cveCount }} 个 CVE
       </el-tag>
     </div>
 
     <!-- Charts -->
     <el-row :gutter="16" class="chart-row">
+      <el-col :span="12">
+        <el-card shadow="never" class="chart-card">
+          <template #header>
+            <div class="table-header">
+              <span>漏洞利用（在野）</span>
+              <el-button text type="primary" @click="goVulnExploit">查看列表</el-button>
+            </div>
+          </template>
+          <p class="vuln-stat-line">
+            登记 <strong>{{ dashboard.snapshot.cveCount }}</strong> 个 CVE，其中
+            <strong class="in-wild">{{ dashboard.inWildCveCount }}</strong> 个关联知识标记为在野利用
+          </p>
+        </el-card>
+      </el-col>
       <el-col :span="12">
         <el-card shadow="never" class="chart-card">
           <template #header>
@@ -81,14 +99,14 @@ function goKnowledge(id: number) {
           <SimpleBarChart :items="dashboard.snapshot.malwareClassDist" />
         </el-card>
       </el-col>
+    </el-row>
+    <el-row :gutter="16" class="chart-row">
       <el-col :span="12">
         <el-card shadow="never" class="chart-card">
           <template #header>攻击行业分布</template>
           <SimpleBarChart :items="dashboard.snapshot.industryDist" />
         </el-card>
       </el-col>
-    </el-row>
-    <el-row :gutter="16" class="chart-row">
       <el-col :span="12">
         <el-card shadow="never" class="chart-card">
           <template #header>ATT&CK 战术分布</template>
@@ -200,5 +218,18 @@ function goKnowledge(id: number) {
 .row-tag {
   margin-left: 8px;
   vertical-align: middle;
+}
+.click-tag {
+  cursor: pointer;
+}
+.vuln-stat-line {
+  margin: 0;
+  padding: 8px 4px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #606266;
+}
+.in-wild {
+  color: #f56c6c;
 }
 </style>

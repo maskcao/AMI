@@ -5,7 +5,7 @@ export interface FacetItem {
   count: number
 }
 
-const props = defineProps<{
+defineProps<{
   title?: string
   items: FacetItem[]
   modelValue: string

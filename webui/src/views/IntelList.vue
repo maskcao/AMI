@@ -7,43 +7,44 @@ import AppLayout from '@/components/AppLayout.vue'
 import FilterCard from '@/components/FilterCard.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageShell from '@/components/PageShell.vue'
-import QualityScore from '@/components/QualityScore.vue'
 import WorkbenchHelp from '@/components/WorkbenchHelp.vue'
+import {
+  INGEST_STATUS_LABELS,
+  KNOWLEDGE_ACTION_LABELS,
+  ingestStatusTagType,
+} from '@/constants/intel-pipeline'
+import { INTEL_MERGE_POLICY_SUMMARY } from '@/constants/merge-policy'
+import type { IngestStatus, IntelSummary, KnowledgeLinkAction } from '@/types/intel'
 
 const router = useRouter()
 const loading = ref(false)
-const items = ref<Awaited<ReturnType<typeof listIntel>>['items']>([])
+const items = ref<IntelSummary[]>([])
 
 const filterSource = ref('')
-const filterStatus = ref('')
-
-function statusLabel(s: string) {
-  const map: Record<string, string> = {
-    published: '已发布',
-    pending_review: '待审',
-    draft: '草稿',
-    parsing: '解析中',
-    archived: '归档',
-  }
-  return map[s] ?? s
-}
-
+const filterStatus = ref<IngestStatus | ''>('')
 const searchQ = ref('')
 
 const listPager = usePagedFilter(() => items.value, {
   pageSize: 10,
   matchQuery: (row, q) =>
-    includesQuery(q, row.title, row.sourceName, String(row.id), statusLabel(row.ingestStatus)),
+    includesQuery(
+      q,
+      row.title,
+      row.sourceName,
+      row.collectSourceName,
+      String(row.id),
+      INGEST_STATUS_LABELS[row.ingestStatus],
+    ),
 })
 
 const sourceOptions = [
   { label: '360', value: '360' },
   { label: 'CERT', value: 'CERT' },
 ]
-const statusOptions = [
-  { label: '已发布', value: 'published' },
-  { label: '待审', value: 'pending_review' },
-]
+
+const statusOptions = (
+  ['queued', 'parsing', 'extracting', 'succeeded', 'failed'] as IngestStatus[]
+).map((value) => ({ value, label: INGEST_STATUS_LABELS[value] }))
 
 async function load() {
   loading.value = true
@@ -58,14 +59,21 @@ async function load() {
   }
 }
 
-function formatDisclosed(at: string | null) {
-  return at ?? '未知'
+function formatCollected(at: string) {
+  return at ? at.slice(0, 16).replace('T', ' ') : '—'
 }
 
-function statusType(s: string) {
-  if (s === 'published') return 'success'
-  if (s === 'pending_review') return 'warning'
-  return 'info'
+function formatConfidence(v: number | null) {
+  if (v == null) return '—'
+  return `${Math.round(v * 100)}%`
+}
+
+function ingestStatusLabel(status: IngestStatus): string {
+  return INGEST_STATUS_LABELS[status]
+}
+
+function knowledgeActionLabel(action: KnowledgeLinkAction): string {
+  return KNOWLEDGE_ACTION_LABELS[action]
 }
 
 function goDetail(id: number) {
@@ -92,8 +100,8 @@ onMounted(search)
   <AppLayout>
     <PageShell wide>
       <PageHeader
-        title="情报工作台"
-        description="采集与审核原始威胁报告；结构化内容在攻击知识库维护并挂载关联。"
+        title="采集队列"
+        :description="`原始报告采集与处理：采集 → 解析 → AI 抽取 → 自动写入攻击知识库。${INTEL_MERGE_POLICY_SUMMARY}`"
       />
       <WorkbenchHelp mode="intel" />
 
@@ -107,8 +115,8 @@ onMounted(search)
               <el-option v-for="opt in sourceOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="filterStatus" clearable placeholder="全部" style="width: 120px">
+          <el-form-item label="处理状态">
+            <el-select v-model="filterStatus" clearable placeholder="全部" style="width: 130px">
               <el-option v-for="opt in statusOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
@@ -119,25 +127,30 @@ onMounted(search)
       </FilterCard>
 
       <el-card shadow="never" v-loading="loading" class="table-card">
-        <el-table v-if="listPager.total.value > 0" :data="listPager.pageData.value" stripe>
+        <el-table v-if="listPager.total.value > 0" :data="listPager.pageData.value" stripe size="small">
           <el-table-column prop="id" label="ID" width="72" />
-          <el-table-column label="情报标题" min-width="300">
+          <el-table-column label="标题" min-width="260">
             <template #default="{ row }">
               <el-link type="primary" class="title-link" @click="goDetail(row.id)">{{ row.title }}</el-link>
             </template>
           </el-table-column>
-          <el-table-column label="披露时间" width="100">
-            <template #default="{ row }">{{ formatDisclosed(row.disclosedAt) }}</template>
+          <el-table-column prop="collectSourceName" label="采集源" width="130" show-overflow-tooltip />
+          <el-table-column label="采集时间" width="140">
+            <template #default="{ row }">{{ formatCollected(row.collectedAt) }}</template>
           </el-table-column>
-          <el-table-column prop="sourceName" label="来源" width="88" />
-          <el-table-column label="状态" width="96">
+          <el-table-column label="处理状态" width="108">
             <template #default="{ row }">
-              <el-tag :type="statusType(row.ingestStatus)" size="small" effect="light" round>
-                {{ statusLabel(row.ingestStatus) }}
+              <el-tag :type="ingestStatusTagType(row.ingestStatus)" size="small" effect="light" round>
+                {{ ingestStatusLabel(row.ingestStatus) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="关联攻击知识" width="180">
+          <el-table-column label="知识写入" width="108">
+            <template #default="{ row }">
+              <span class="action-text">{{ knowledgeActionLabel(row.knowledgeAction) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="关联知识" width="100">
             <template #default="{ row }">
               <template v-if="row.knowledgeIds.length">
                 <el-link
@@ -150,19 +163,14 @@ onMounted(search)
                   #{{ kid }}
                 </el-link>
               </template>
-              <span v-else class="muted">未关联</span>
+              <span v-else class="muted">—</span>
             </template>
           </el-table-column>
-          <el-table-column label="IOC" width="64" align="center">
-            <template #default="{ row }">{{ row.iocCount }}</template>
-          </el-table-column>
-          <el-table-column label="质量" width="120">
-            <template #default="{ row }">
-              <QualityScore :score="row.qualityScore" />
-            </template>
+          <el-table-column label="抽取置信" width="88" align="center">
+            <template #default="{ row }">{{ formatConfidence(row.extractConfidence) }}</template>
           </el-table-column>
         </el-table>
-        <el-empty v-else description="无匹配情报" :image-size="80" />
+        <el-empty v-else description="无匹配任务" :image-size="80" />
         <div v-if="listPager.total.value > 0" class="list-pagination">
           <el-pagination
             v-model:current-page="listPager.page"
@@ -189,11 +197,15 @@ onMounted(search)
   font-weight: 500;
 }
 .kid-link {
-  margin-right: 8px;
+  margin-right: 6px;
 }
 .muted {
   color: #94a3b8;
   font-size: 13px;
+}
+.action-text {
+  font-size: 12px;
+  color: var(--ami-text-secondary);
 }
 .list-pagination {
   margin-top: 16px;

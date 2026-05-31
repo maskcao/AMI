@@ -1,22 +1,22 @@
 <script setup lang="ts">
+/** @deprecated wide is default; prop kept for compatibility */
 defineProps<{
   wide?: boolean
 }>()
 </script>
 
 <template>
-  <div class="page-shell" :class="{ wide }">
+  <div class="page-shell">
     <slot />
   </div>
 </template>
 
 <style scoped>
 .page-shell {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 28px 32px 40px;
-}
-.page-shell.wide {
-  max-width: 1440px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px 28px 40px;
+  box-sizing: border-box;
 }
 </style>

@@ -32,6 +32,16 @@ const router = createRouter({
       redirect: '/analytics/infra',
     },
     {
+      path: '/analytics/actor/:actorKey',
+      name: 'threat-actor-detail',
+      component: () => import('@/views/ThreatActorDetailPage.vue'),
+    },
+    {
+      path: '/analytics/entity/:dimension/:entityKey',
+      name: 'entity-dimension-detail',
+      component: () => import('@/views/EntityDimensionDetailPage.vue'),
+    },
+    {
       path: '/analytics/:dimension',
       name: 'analytics-dimension',
       component: () => import('@/views/AnalyticsHub.vue'),

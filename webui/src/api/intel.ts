@@ -8,15 +8,33 @@ function delay<T>(value: T): Promise<T> {
 }
 
 function toSummary(d: IntelDetail): IntelSummary {
+  const {
+    id,
+    title,
+    disclosedAt,
+    sourceName,
+    collectSourceName,
+    ingestStatus,
+    collectedAt,
+    knowledgeIds,
+    knowledgeAction,
+    extractConfidence,
+    iocCount,
+    pipelineError,
+  } = d
   return {
-    id: d.id,
-    title: d.title,
-    disclosedAt: d.disclosedAt,
-    sourceName: d.sourceName,
-    ingestStatus: d.ingestStatus,
-    knowledgeIds: d.knowledgeIds,
-    iocCount: d.iocCount,
-    qualityScore: d.qualityScore,
+    id,
+    title,
+    disclosedAt,
+    sourceName,
+    collectSourceName,
+    ingestStatus,
+    collectedAt,
+    knowledgeIds,
+    knowledgeAction,
+    extractConfidence,
+    iocCount,
+    pipelineError,
   }
 }
 

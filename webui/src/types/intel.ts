@@ -7,6 +7,19 @@ export interface AttackTechnique {
   description?: string
 }
 
+export type IntelFigureKind = 'attack-flow' | 'technique-map' | 'screenshot' | 'other'
+
+/** Image / diagram extracted from intel report (evidence layer). */
+export interface IntelFigure {
+  id: string
+  intelId: number
+  title: string
+  caption?: string
+  kind: IntelFigureKind
+  src: string
+  techniqueIds?: string[]
+}
+
 export interface IntelIoc {
   type: string
   value: string
@@ -14,31 +27,55 @@ export interface IntelIoc {
   expiresAt?: string | null
 }
 
-/** Intel report (证据层) — TTP/summary live on AttackKnowledge */
+/** Pipeline job status — no human review gate */
+export type IngestStatus =
+  | 'queued'
+  | 'parsing'
+  | 'extracting'
+  | 'succeeded'
+  | 'failed'
+  | 'archived'
+
+export type KnowledgeLinkAction = 'created' | 'updated' | 'skipped' | 'pending'
+
+/** Intel report (证据层) — structured TTP/entities live on AttackKnowledge (AI-written) */
 export interface IntelSummary {
   id: number
   title: string
   disclosedAt: string | null
   sourceName: string
-  ingestStatus: 'draft' | 'parsing' | 'pending_review' | 'published' | 'archived'
+  collectSourceName: string
+  ingestStatus: IngestStatus
+  collectedAt: string
   knowledgeIds: number[]
+  knowledgeAction: KnowledgeLinkAction
+  extractConfidence: number | null
   iocCount: number
-  qualityScore: number
+  pipelineError?: string
+}
+
+export interface IntelAiExtractPreview {
+  summary: string
+  suggestedTechniques: string[]
+  suggestedMalware: string[]
+  suggestedCves: string[]
 }
 
 export interface IntelDetail extends IntelSummary {
   sourceUrl: string
-  qualityHints: string[]
   iocs: IntelIoc[]
   originalHtml: string
-  collectedAt: string
+  /** Parser-extracted figures (plus inline &lt;img&gt; in originalHtml). */
+  figures: IntelFigure[]
   parseVersion: string
+  enrichVersion: string
+  aiExtract: IntelAiExtractPreview | null
 }
 
 export interface IntelListParams {
   sourceName?: string
   knowledgeId?: number
-  ingestStatus?: string
+  ingestStatus?: IngestStatus
   sortOrder?: 'asc' | 'desc'
 }
 

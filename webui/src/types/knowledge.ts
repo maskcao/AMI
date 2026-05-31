@@ -1,5 +1,7 @@
-import type { AttackMatrix, AttackTechnique } from '@/types/intel'
+import type { AttackMatrix, AttackTechnique, IntelFigure, KnowledgeLinkAction } from '@/types/intel'
 import type { MalwareClass } from '@/constants/malware'
+
+export type KnowledgeStatus = 'draft' | 'published'
 
 export interface MalwareRef {
   name: string
@@ -26,6 +28,20 @@ export interface ExploitedVulnerability {
   inWild?: boolean
 }
 
+export interface KnowledgeProcedure {
+  techniqueId: string
+  text: string
+  evidenceIntelId?: number
+}
+
+export interface KnowledgePipelineSource {
+  lastIntelId: number
+  lastIntelTitle: string
+  knowledgeAction: KnowledgeLinkAction
+  extractConfidence: number | null
+  pipelinedAt: string
+}
+
 export interface KnowledgeDimensionCounts {
   techniques: number
   tools: number
@@ -37,6 +53,9 @@ export interface KnowledgeDimensionCounts {
 export interface KnowledgeSummary {
   id: number
   title: string
+  summary: string | null
+  status: KnowledgeStatus
+  needsReview: boolean
   targetIndustries: string[]
   attackMatrix: AttackMatrix
   malware: MalwareRef[]
@@ -56,24 +75,43 @@ export interface LinkedIntelBrief {
 }
 
 export interface KnowledgeDetail extends KnowledgeSummary {
-  summary: string | null
   qualityHints: string[]
   techniques: AttackTechnique[]
   tools: AttackTool[]
   infrastructure: AttackInfrastructure[]
   vulnerabilities: ExploitedVulnerability[]
   linkedIntel: LinkedIntelBrief[]
+  procedures: KnowledgeProcedure[]
+  pipeline: KnowledgePipelineSource | null
+  /** Diagrams / screenshots aggregated from linked intel reports. */
+  evidenceFigures: IntelFigure[]
 }
+
+export type KnowledgeReviewFilter = 'all' | 'needs_review' | 'draft' | 'published'
 
 export interface KnowledgeListParams {
   industries?: string[]
   matrix?: AttackMatrix
   malwareClass?: MalwareClass
   q?: string
+  review?: KnowledgeReviewFilter
   sortOrder?: 'asc' | 'desc'
 }
 
 export interface KnowledgeListResult {
   items: KnowledgeSummary[]
   total: number
+  needsReviewCount: number
+}
+
+export interface KnowledgeUpdatePayload {
+  title?: string
+  summary?: string | null
+  targetIndustries?: string[]
+  status?: KnowledgeStatus
+}
+
+export interface KnowledgeMergePayload {
+  sourceId: number
+  targetId: number
 }

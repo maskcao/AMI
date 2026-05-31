@@ -31,4 +31,16 @@ defineProps<{
   line-height: 1.6;
   font-size: 14px;
 }
+.original-body :deep(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 12px 0;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  cursor: zoom-in;
+}
+.original-body :deep(figure.report-figure) {
+  margin: 16px 0;
+}
 </style>

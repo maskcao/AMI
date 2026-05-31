@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   buildActorRows,
   buildCveRows,
-  buildDimensionNav,
   buildInfraRows,
   buildMalwareRows,
   buildTechniqueRows,
@@ -16,6 +15,7 @@ import {
   type ToolRow,
   type InfraRow,
 } from '@/analytics/aggregate'
+import { THREAT_LIB_NAV_ITEMS } from '@/constants/threat-lib-nav'
 import AppLayout from '@/components/AppLayout.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageShell from '@/components/PageShell.vue'
@@ -24,22 +24,19 @@ import MitreTacticTree from '@/components/analytics/MitreTacticTree.vue'
 import ThreatIntelFilterForm, {
   type ThreatIntelFilterDraft,
 } from '@/components/analytics/ThreatIntelFilterForm.vue'
+import IndustryTags from '@/components/IndustryTags.vue'
 import KnowledgeLinkCell from '@/components/analytics/KnowledgeLinkCell.vue'
+import { actorNameToSlug } from '@/analytics/actors'
+import type { EntityDimensionKind } from '@/types/entity-profile'
 import { includesQuery, usePagedFilter } from '@/composables/usePagedFilter'
 import { malwareClassLabel, malwareClassColor } from '@/constants/malware'
 
 const route = useRoute()
+const router = useRouter()
 
 const dimension = computed(() => route.params.dimension as string)
-const nav = buildDimensionNav().filter((d) => d.key !== 'overview')
+const nav = THREAT_LIB_NAV_ITEMS
 const activeNav = computed(() => nav.find((n) => n.key === dimension.value) ?? nav[0])
-
-const cveRows = buildCveRows()
-const malwareRows = buildMalwareRows()
-const actorRows = buildActorRows()
-const techniqueRows = buildTechniqueRows()
-const toolRows = buildToolRows()
-const infraRows = buildInfraRows()
 
 const infraRoleLabel: Record<string, string> = {
   c2: 'C2',
@@ -64,9 +61,10 @@ function emptyDraft(): ThreatIntelFilterDraft {
 
 const draft = reactive<ThreatIntelFilterDraft>(emptyDraft())
 
-const cveList = usePagedFilter<CveRow>(() => cveRows, {
+const cveList = usePagedFilter<CveRow>(() => (dimension.value === 'cve' ? buildCveRows() : []), {
   matchQuery: (row, q) =>
     includesQuery(q, row.cveId, row.description) ||
+    row.targetIndustries.some((ind) => includesQuery(q, ind)) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
   matchExtras: (row, ex) => {
     if (ex.inWild === 'yes') return row.inWild
@@ -75,20 +73,32 @@ const cveList = usePagedFilter<CveRow>(() => cveRows, {
   },
 })
 
-const malwareList = usePagedFilter<MalwareRow>(() => malwareRows, {
+const malwareList = usePagedFilter<MalwareRow>(() => (dimension.value === 'malware' ? buildMalwareRows() : []), {
   matchQuery: (row, q) =>
     includesQuery(q, row.name, malwareClassLabel(row.class)) ||
+    row.targetIndustries.some((ind) => includesQuery(q, ind)) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
   matchFacet: (row, facet) => !facet || row.class === facet,
 })
 
-const actorList = usePagedFilter<ActorRow>(() => actorRows, {
+const actorList = usePagedFilter<ActorRow>(() => (dimension.value === 'actors' ? buildActorRows() : []), {
   matchQuery: (row, q) =>
     includesQuery(q, row.name) ||
+    row.targetIndustries.some((ind) => includesQuery(q, ind)) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
 })
 
-const mitreList = usePagedFilter<TechniqueRow>(() => techniqueRows, {
+function goActorDetail(name: string) {
+  router.push({ name: 'threat-actor-detail', params: { actorKey: actorNameToSlug(name) } })
+}
+
+function goEntityDetail(dimension: EntityDimensionKind, slug: string) {
+  router.push({ name: 'entity-dimension-detail', params: { dimension, entityKey: slug } })
+}
+
+const mitreList = usePagedFilter<TechniqueRow>(
+  () => (dimension.value === 'mitre' ? buildTechniqueRows() : []),
+  {
   matchQuery: (row, q) =>
     includesQuery(q, row.techniqueId, row.name, row.tactic, row.matrix) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
@@ -105,53 +115,45 @@ const mitreList = usePagedFilter<TechniqueRow>(() => techniqueRows, {
   },
 })
 
-const toolList = usePagedFilter<ToolRow>(() => toolRows, {
+const toolList = usePagedFilter<ToolRow>(() => (dimension.value === 'tools' ? buildToolRows() : []), {
   matchQuery: (row, q) =>
     includesQuery(q, row.name, row.category) ||
+    row.targetIndustries.some((ind) => includesQuery(q, ind)) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
   matchExtras: (row, ex) => !ex.category || row.category === ex.category,
 })
 
-const infraList = usePagedFilter<InfraRow>(() => infraRows, {
+const infraList = usePagedFilter<InfraRow>(() => (dimension.value === 'infra' ? buildInfraRows() : []), {
   matchQuery: (row, q) =>
     includesQuery(q, row.type, row.value, row.role, infraRoleLabel[row.role]) ||
+    row.targetIndustries.some((ind) => includesQuery(q, ind)) ||
     row.knowledge.some((k) => includesQuery(q, k.knowledgeTitle, String(k.knowledgeId))),
   matchFacet: (row, facet) => !facet || row.role === facet,
 })
 
-const tacticOptions = computed(() =>
-  [...new Set(techniqueRows.map((t) => t.tactic))].sort((a, b) => a.localeCompare(b)),
-)
-
-const toolCategoryOptions = computed(() =>
-  [...new Set(toolRows.map((t) => t.category).filter(Boolean) as string[])].sort((a, b) =>
+const tacticOptions = computed(() => {
+  if (dimension.value !== 'mitre') return []
+  return [...new Set(buildTechniqueRows().map((t) => t.tactic))].sort((a, b) =>
     a.localeCompare(b),
-  ),
-)
+  )
+})
+
+const toolCategoryOptions = computed(() => {
+  if (dimension.value !== 'tools') return []
+  return [...new Set(buildToolRows().map((t) => t.category).filter(Boolean) as string[])].sort(
+    (a, b) => a.localeCompare(b),
+  )
+})
 
 const infraRoleOptions = computed(() => {
-  const keys = [...new Set(infraRows.map((i) => i.role))]
+  if (dimension.value !== 'infra') return []
+  const keys = [...new Set(buildInfraRows().map((i) => i.role))]
   return keys.map((key) => ({ key, label: infraRoleLabel[key] ?? key }))
 })
 
-const activeList = computed(() => {
-  switch (dimension.value) {
-    case 'cve':
-      return cveList
-    case 'malware':
-      return malwareList
-    case 'actors':
-      return actorList
-    case 'mitre':
-      return mitreList
-    case 'tools':
-      return toolList
-    case 'infra':
-      return infraList
-    default:
-      return cveList
-  }
-})
+const mitreTechniqueRows = computed(() =>
+  dimension.value === 'mitre' ? buildTechniqueRows() : [],
+)
 
 function applySearch() {
   const q = draft.query
@@ -232,7 +234,15 @@ watch(
     <PageShell wide>
       <PageHeader
         :title="activeNav?.label ?? '威胁情报库'"
-        description="按实体类型浏览聚合威胁对象；筛选条件填写后点击「查询」生效（与攻击知识库一致）。"
+        :description="
+          dimension === 'actors'
+            ? '攻击组织由关联的攻击知识聚合；点击组织名查看多维关联图谱。'
+            : dimension === 'cve'
+              ? '漏洞利用维度：从攻击知识聚合 CVE 及在野状态；点击 CVE 查看关联行业、组织、工具等与图谱。'
+              : ['malware', 'tools', 'infra'].includes(dimension)
+                ? '由攻击知识聚合；点击名称查看关联行业、知识条目与多维拓扑图谱。'
+                : '按实体类型浏览聚合威胁对象；筛选条件填写后点击「查询」生效（与攻击知识库一致）。'
+        "
       />
 
       <ThreatIntelFilterForm
@@ -251,12 +261,12 @@ watch(
           :closable="false"
           show-icon
           class="infra-hint"
-          title="本页展示攻击知识中维护的基础设施（域名、IP 等及用途）。报告内抽取的 IOC 请在情报工作台对应报告中查看。"
+          title="本页展示攻击知识中维护的基础设施（域名、IP 等及用途）。报告内抽取的 IOC 请在采集队列对应任务中查看。"
         />
 
         <EntityListPanel
           v-if="dimension === 'cve'"
-          title="CVE 列表"
+          title="漏洞利用"
           :total="cveList.total.value"
           :page="cveList.page.value"
           :page-size="cveList.pageSize.value"
@@ -264,8 +274,12 @@ watch(
           @size-change="cveList.onSizeChange"
         >
           <el-table v-if="cveList.total.value > 0" :data="cveList.pageData.value" stripe size="small">
-            <el-table-column prop="cveId" label="CVE" width="150" />
-            <el-table-column prop="description" label="描述" min-width="240" show-overflow-tooltip />
+            <el-table-column label="CVE" width="150">
+              <template #default="{ row }">
+                <el-link type="primary" @click="goEntityDetail('cve', row.slug)">{{ row.cveId }}</el-link>
+              </template>
+            </el-table-column>
+            <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
             <el-table-column label="在野" width="80">
               <template #default="{ row }">
                 <el-tag :type="row.inWild ? 'danger' : 'info'" size="small">
@@ -273,9 +287,22 @@ watch(
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="关联攻击知识" min-width="160">
+            <el-table-column label="攻击行业" min-width="160">
               <template #default="{ row }">
-                <KnowledgeLinkCell :items="row.knowledge" />
+                <IndustryTags v-if="row.targetIndustries.length" :industries="row.targetIndustries" />
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="关联知识" width="96" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" round effect="plain" type="primary">{{ row.knowledgeCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="88" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="goEntityDetail('cve', row.slug)">
+                  详情
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -291,7 +318,11 @@ watch(
           @size-change="malwareList.onSizeChange"
         >
           <el-table v-if="malwareList.total.value > 0" :data="malwareList.pageData.value" stripe size="small">
-            <el-table-column prop="name" label="家族" width="160" />
+            <el-table-column label="家族" width="160">
+              <template #default="{ row }">
+                <el-link type="primary" @click="goEntityDetail('malware', row.slug)">{{ row.name }}</el-link>
+              </template>
+            </el-table-column>
             <el-table-column label="分类" width="110">
               <template #default="{ row }">
                 <el-tag size="small" :type="malwareClassColor(row.class)">
@@ -299,9 +330,22 @@ watch(
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="关联知识" min-width="140">
+            <el-table-column label="攻击行业" min-width="160">
               <template #default="{ row }">
-                <KnowledgeLinkCell :items="row.knowledge" />
+                <IndustryTags v-if="row.targetIndustries.length" :industries="row.targetIndustries" />
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="关联知识" width="96" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" round effect="plain" type="primary">{{ row.knowledgeCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="88" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="goEntityDetail('malware', row.slug)">
+                  详情
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -317,14 +361,28 @@ watch(
           @size-change="actorList.onSizeChange"
         >
           <el-table v-if="actorList.total.value > 0" :data="actorList.pageData.value" stripe size="small">
-            <el-table-column prop="name" label="组织/团伙" min-width="200" />
-            <el-table-column label="关联攻击知识" min-width="200">
+            <el-table-column label="组织/团伙" min-width="180">
               <template #default="{ row }">
-                <KnowledgeLinkCell :items="row.knowledge" />
+                <el-link type="primary" class="actor-link" @click="goActorDetail(row.name)">
+                  {{ row.name }}
+                </el-link>
               </template>
             </el-table-column>
-            <el-table-column label="知识条目数" width="110" align="center">
-              <template #default="{ row }">{{ row.knowledge.length }}</template>
+            <el-table-column label="攻击行业" min-width="200">
+              <template #default="{ row }">
+                <IndustryTags v-if="row.targetIndustries.length" :industries="row.targetIndustries" />
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="关联知识" width="96" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" round effect="plain" type="primary">{{ row.knowledgeCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="88" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="goActorDetail(row.name)">详情</el-button>
+              </template>
             </el-table-column>
           </el-table>
         </EntityListPanel>
@@ -339,7 +397,11 @@ watch(
           @size-change="mitreList.onSizeChange"
         >
           <template #aside>
-            <MitreTacticTree :model-value="draft.facet" :techniques="techniqueRows" @update:model-value="onMitreTreePick" />
+            <MitreTacticTree
+              :model-value="draft.facet"
+              :techniques="mitreTechniqueRows"
+              @update:model-value="onMitreTreePick"
+            />
           </template>
           <el-table v-if="mitreList.total.value > 0" :data="mitreList.pageData.value" stripe size="small">
             <el-table-column prop="techniqueId" label="ID" width="90" />
@@ -364,11 +426,28 @@ watch(
           @size-change="toolList.onSizeChange"
         >
           <el-table v-if="toolList.total.value > 0" :data="toolList.pageData.value" stripe size="small">
-            <el-table-column prop="name" label="工具" width="160" />
-            <el-table-column prop="category" label="类别" width="140" />
-            <el-table-column label="关联攻击知识" min-width="200">
+            <el-table-column label="工具" width="160">
               <template #default="{ row }">
-                <KnowledgeLinkCell :items="row.knowledge" />
+                <el-link type="primary" @click="goEntityDetail('tool', row.slug)">{{ row.name }}</el-link>
+              </template>
+            </el-table-column>
+            <el-table-column prop="category" label="类别" width="120" />
+            <el-table-column label="攻击行业" min-width="160">
+              <template #default="{ row }">
+                <IndustryTags v-if="row.targetIndustries.length" :industries="row.targetIndustries" />
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="关联知识" width="96" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" round effect="plain" type="primary">{{ row.knowledgeCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="88" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="goEntityDetail('tool', row.slug)">
+                  详情
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -385,15 +464,32 @@ watch(
         >
           <el-table v-if="infraList.total.value > 0" :data="infraList.pageData.value" stripe size="small">
             <el-table-column prop="type" label="类型" width="80" />
-            <el-table-column prop="value" label="值" min-width="200" show-overflow-tooltip />
+            <el-table-column label="值" min-width="180" show-overflow-tooltip>
+              <template #default="{ row }">
+                <el-link type="primary" @click="goEntityDetail('infra', row.slug)">{{ row.value }}</el-link>
+              </template>
+            </el-table-column>
             <el-table-column label="用途" width="100">
               <template #default="{ row }">
                 {{ infraRoleLabel[row.role] ?? row.role }}
               </template>
             </el-table-column>
-            <el-table-column label="关联知识" width="120">
+            <el-table-column label="攻击行业" min-width="140">
               <template #default="{ row }">
-                <KnowledgeLinkCell :items="row.knowledge" />
+                <IndustryTags v-if="row.targetIndustries.length" :industries="row.targetIndustries" />
+                <span v-else class="muted">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="关联知识" width="96" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" round effect="plain" type="primary">{{ row.knowledgeCount }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="88" align="center">
+              <template #default="{ row }">
+                <el-button text type="primary" size="small" @click="goEntityDetail('infra', row.slug)">
+                  详情
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -410,5 +506,12 @@ watch(
 }
 .panel :deep(.el-table) {
   width: 100%;
+}
+.muted {
+  color: #94a3b8;
+  font-size: 13px;
+}
+.actor-link {
+  font-weight: 500;
 }
 </style>

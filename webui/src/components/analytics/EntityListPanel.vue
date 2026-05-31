@@ -48,7 +48,11 @@ const emit = defineEmits<{
 
 <style scoped>
 .entity-list-panel {
+  width: 100%;
   background: var(--ami-surface) !important;
+}
+.list-main :deep(.el-table) {
+  width: 100%;
 }
 .panel-head {
   display: flex;

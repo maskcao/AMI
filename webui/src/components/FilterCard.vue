@@ -6,6 +6,7 @@
 
 <style scoped>
 .filter-card {
+  width: 100%;
   margin-bottom: 16px;
   background: var(--ami-surface) !important;
 }

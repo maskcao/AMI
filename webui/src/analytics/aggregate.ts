@@ -1,3 +1,5 @@
+import { buildThreatActorList } from '@/analytics/actors'
+import { entityKeyEncode, infraEntityKey, malwareEntityKey } from '@/analytics/entity-profiles'
 import { KNOWLEDGE_DETAILS } from '@/mock/knowledge'
 import { INTEL_DETAILS } from '@/mock/intel'
 import { malwareClassLabel, type MalwareClass } from '@/constants/malware'
@@ -22,19 +24,28 @@ export interface LinkedKnowledgeRef {
 
 export interface CveRow {
   cveId: string
+  slug: string
   description?: string
   inWild: boolean
+  targetIndustries: string[]
+  knowledgeCount: number
   knowledge: LinkedKnowledgeRef[]
 }
 
 export interface MalwareRow {
   name: string
   class: MalwareClass
+  slug: string
+  targetIndustries: string[]
+  knowledgeCount: number
   knowledge: LinkedKnowledgeRef[]
 }
 
 export interface ActorRow {
   name: string
+  slug: string
+  targetIndustries: string[]
+  knowledgeCount: number
   knowledge: LinkedKnowledgeRef[]
 }
 
@@ -55,14 +66,20 @@ export interface IocRow {
 
 export interface ToolRow {
   name: string
+  slug: string
   category?: string
+  targetIndustries: string[]
+  knowledgeCount: number
   knowledge: LinkedKnowledgeRef[]
 }
 
 export interface InfraRow {
   type: string
   value: string
+  slug: string
   role: string
+  targetIndustries: string[]
+  knowledgeCount: number
   knowledge: LinkedKnowledgeRef[]
 }
 
@@ -70,11 +87,34 @@ function ref(kid: number, title: string): LinkedKnowledgeRef {
   return { knowledgeId: kid, knowledgeTitle: title }
 }
 
+function industriesFromKnowledge(refs: LinkedKnowledgeRef[]): string[] {
+  const set = new Set<string>()
+  for (const r of refs) {
+    const k = KNOWLEDGE_DETAILS.find((x) => x.id === r.knowledgeId)
+    if (k) {
+      for (const ind of k.targetIndustries) set.add(ind)
+    }
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'zh-CN'))
+}
+
+function finalizeEntityRow<T extends { knowledge: LinkedKnowledgeRef[] }>(
+  row: T,
+  slug: string,
+): T & { slug: string; targetIndustries: string[]; knowledgeCount: number } {
+  return {
+    ...row,
+    slug,
+    targetIndustries: industriesFromKnowledge(row.knowledge),
+    knowledgeCount: row.knowledge.length,
+  }
+}
+
 export function buildDimensionNav(): DimensionNavItem[] {
   const s = buildAnalyticsSnapshot()
   return [
     { key: 'overview', label: 'Dashboard', icon: '📊', count: s.knowledgeCount },
-    { key: 'cve', label: 'CVE 列表', icon: '🐛', count: s.cveCount },
+    { key: 'cve', label: '漏洞利用', icon: '🐛', count: s.cveCount },
     { key: 'malware', label: '恶意软件', icon: '🦠', count: s.malwareCount },
     { key: 'actors', label: '攻击组织', icon: '🕵️', count: s.actorCount },
     { key: 'mitre', label: 'MITRE 分布', icon: '🎯', count: s.techniqueCount },
@@ -97,8 +137,9 @@ export interface DashboardOperationalStats {
   knowledgeCount: number
   intelSourceCount: number
   intelTotalCount: number
-  intelPublishedCount: number
-  intelPendingCount: number
+  intelSucceededCount: number
+  intelProcessingCount: number
+  intelFailedCount: number
   intelLinkedCount: number
   sourceLabels: string[]
 }
@@ -118,8 +159,11 @@ function buildOperationalStats(): DashboardOperationalStats {
     knowledgeCount: KNOWLEDGE_DETAILS.length,
     intelSourceCount: sources.size,
     intelTotalCount: INTEL_DETAILS.length,
-    intelPublishedCount: INTEL_DETAILS.filter((i) => i.ingestStatus === 'published').length,
-    intelPendingCount: INTEL_DETAILS.filter((i) => i.ingestStatus === 'pending_review').length,
+    intelSucceededCount: INTEL_DETAILS.filter((i) => i.ingestStatus === 'succeeded').length,
+    intelProcessingCount: INTEL_DETAILS.filter((i) =>
+      ['queued', 'parsing', 'extracting'].includes(i.ingestStatus),
+    ).length,
+    intelFailedCount: INTEL_DETAILS.filter((i) => i.ingestStatus === 'failed').length,
     intelLinkedCount: INTEL_DETAILS.filter((i) => i.knowledgeIds.length > 0).length,
     sourceLabels: [...sources].sort(),
   }
@@ -187,58 +231,89 @@ function countBy(items: { name: string }[]): CountItem[] {
     .sort((a, b) => b.count - a.count)
 }
 
+type CveRowDraft = Pick<CveRow, 'cveId' | 'description' | 'inWild' | 'knowledge'>
+
+const rowCache: {
+  cve: CveRow[] | null
+  malware: MalwareRow[] | null
+  tools: ToolRow[] | null
+  infra: InfraRow[] | null
+  techniques: TechniqueRow[] | null
+  ioc: IocRow[] | null
+} = {
+  cve: null,
+  malware: null,
+  tools: null,
+  infra: null,
+  techniques: null,
+  ioc: null,
+}
+
+export function invalidateAggregateCache(): void {
+  rowCache.cve = null
+  rowCache.malware = null
+  rowCache.tools = null
+  rowCache.infra = null
+  rowCache.techniques = null
+  rowCache.ioc = null
+}
+
 export function buildCveRows(): CveRow[] {
-  const map = new Map<string, CveRow>()
+  if (rowCache.cve) return rowCache.cve
+  const map = new Map<string, CveRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const v of k.vulnerabilities) {
-      let row = map.get(v.cveId)
-      if (!row) {
-        row = {
+      const existing = map.get(v.cveId)
+      if (existing) {
+        existing.knowledge.push(ref(k.id, k.title))
+      } else {
+        map.set(v.cveId, {
           cveId: v.cveId,
           description: v.description,
           inWild: !!v.inWild,
-          knowledge: [],
-        }
-        map.set(v.cveId, row)
+          knowledge: [ref(k.id, k.title)],
+        })
       }
-      row.knowledge.push(ref(k.id, k.title))
     }
   }
-  return [...map.values()].sort((a, b) => a.cveId.localeCompare(b.cveId))
+  rowCache.cve = [...map.values()]
+    .map((row) => finalizeEntityRow(row, entityKeyEncode(row.cveId)))
+    .sort((a, b) => a.cveId.localeCompare(b.cveId))
+  return rowCache.cve
 }
 
+type MalwareRowDraft = Pick<MalwareRow, 'name' | 'class' | 'knowledge'>
+
 export function buildMalwareRows(): MalwareRow[] {
-  const map = new Map<string, MalwareRow>()
+  if (rowCache.malware) return rowCache.malware
+  const map = new Map<string, MalwareRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const m of k.malware) {
       const key = `${m.name}|${m.class}`
-      let row = map.get(key)
-      if (!row) {
-        row = { name: m.name, class: m.class, knowledge: [] }
-        map.set(key, row)
+      const existing = map.get(key)
+      if (existing) {
+        existing.knowledge.push(ref(k.id, k.title))
+      } else {
+        map.set(key, {
+          name: m.name,
+          class: m.class,
+          knowledge: [ref(k.id, k.title)],
+        })
       }
-      row.knowledge.push(ref(k.id, k.title))
     }
   }
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
+  rowCache.malware = [...map.values()]
+    .map((row) => finalizeEntityRow(row, malwareEntityKey(row.name, row.class)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  return rowCache.malware
 }
 
 export function buildActorRows(): ActorRow[] {
-  const map = new Map<string, ActorRow>()
-  for (const k of KNOWLEDGE_DETAILS) {
-    for (const a of k.threatActors) {
-      let row = map.get(a)
-      if (!row) {
-        row = { name: a, knowledge: [] }
-        map.set(a, row)
-      }
-      row.knowledge.push(ref(k.id, k.title))
-    }
-  }
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
+  return buildThreatActorList()
 }
 
 export function buildTechniqueRows(): TechniqueRow[] {
+  if (rowCache.techniques) return rowCache.techniques
   const map = new Map<string, TechniqueRow>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const t of k.techniques) {
@@ -256,41 +331,64 @@ export function buildTechniqueRows(): TechniqueRow[] {
       row.knowledge.push(ref(k.id, k.title))
     }
   }
-  return [...map.values()].sort((a, b) => a.techniqueId.localeCompare(b.techniqueId))
+  rowCache.techniques = [...map.values()].sort((a, b) => a.techniqueId.localeCompare(b.techniqueId))
+  return rowCache.techniques
 }
+
+type ToolRowDraft = Pick<ToolRow, 'name' | 'category' | 'knowledge'>
 
 export function buildToolRows(): ToolRow[] {
-  const map = new Map<string, ToolRow>()
+  if (rowCache.tools) return rowCache.tools
+  const map = new Map<string, ToolRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const t of k.tools) {
-      let row = map.get(t.name)
-      if (!row) {
-        row = { name: t.name, category: t.category, knowledge: [] }
-        map.set(t.name, row)
+      const existing = map.get(t.name)
+      if (existing) {
+        existing.knowledge.push(ref(k.id, k.title))
+      } else {
+        map.set(t.name, {
+          name: t.name,
+          category: t.category,
+          knowledge: [ref(k.id, k.title)],
+        })
       }
-      row.knowledge.push(ref(k.id, k.title))
     }
   }
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
+  rowCache.tools = [...map.values()]
+    .map((row) => finalizeEntityRow(row, entityKeyEncode(row.name)))
+    .sort((a, b) => a.name.localeCompare(b.name))
+  return rowCache.tools
 }
 
+type InfraRowDraft = Pick<InfraRow, 'type' | 'value' | 'role' | 'knowledge'>
+
 export function buildInfraRows(): InfraRow[] {
-  const map = new Map<string, InfraRow>()
+  if (rowCache.infra) return rowCache.infra
+  const map = new Map<string, InfraRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const i of k.infrastructure) {
       const key = `${i.type}|${i.value}`
-      let row = map.get(key)
-      if (!row) {
-        row = { type: i.type, value: i.value, role: i.role, knowledge: [] }
-        map.set(key, row)
+      const existing = map.get(key)
+      if (existing) {
+        existing.knowledge.push(ref(k.id, k.title))
+      } else {
+        map.set(key, {
+          type: i.type,
+          value: i.value,
+          role: i.role,
+          knowledge: [ref(k.id, k.title)],
+        })
       }
-      row.knowledge.push(ref(k.id, k.title))
     }
   }
-  return [...map.values()].sort((a, b) => a.value.localeCompare(b.value))
+  rowCache.infra = [...map.values()]
+    .map((row) => finalizeEntityRow(row, infraEntityKey(row.type, row.value)))
+    .sort((a, b) => a.value.localeCompare(b.value))
+  return rowCache.infra
 }
 
 export function buildIocRows(): IocRow[] {
+  if (rowCache.ioc) return rowCache.ioc
   const map = new Map<string, IocRow>()
 
   for (const intel of INTEL_DETAILS) {
@@ -322,5 +420,6 @@ export function buildIocRows(): IocRow[] {
     }
   }
 
-  return [...map.values()].sort((a, b) => a.type.localeCompare(b.type))
+  rowCache.ioc = [...map.values()].sort((a, b) => a.type.localeCompare(b.type))
+  return rowCache.ioc
 }

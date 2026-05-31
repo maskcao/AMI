@@ -28,12 +28,28 @@
   box-sizing: border-box;
 }
 
+html,
 body {
+  height: 100%;
   margin: 0;
+}
+
+body {
   font-family: var(--ami-font);
   color: var(--ami-text);
   background: var(--ami-bg);
   -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+}
+
+/* Shell: sidebar + scrollable main */
+.ami-app-layout {
+  width: 100%;
+  height: 100%;
 }
 
 a {

@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 const keywordPlaceholder = computed(() => {
   const map: Record<string, string> = {
-    cve: 'CVE / 描述 / 关联知识',
+    cve: 'CVE / 漏洞描述 / 关联知识',
     malware: '家族名 / 分类 / 关联知识',
     actors: '组织名 / 关联知识',
     mitre: '技术 ID / 名称 / 战术',

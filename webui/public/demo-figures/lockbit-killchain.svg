@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" role="img" aria-label="LockBit kill chain">
+  <rect width="700" height="220" fill="#f8fafc"/>
+  <text x="350" y="30" text-anchor="middle" font-family="Inter,sans-serif" font-size="14" font-weight="600" fill="#0f172a">LockBit Ì extortion ;ûþ:	</text>
+  <g font-family="Inter,sans-serif" font-size="11" fill="#334155">
+    <rect x="20" y="70" width="100" height="44" rx="6" fill="#e0e7ff" stroke="#6366f1"/><text x="70" y="97" text-anchor="middle">“|/RDP</text>
+    <rect x="140" y="70" width="100" height="44" rx="6" fill="#fef3c7" stroke="#f59e0b"/><text x="190" y="97" text-anchor="middle">*û¨</text>
+    <rect x="260" y="70" width="100" height="44" rx="6" fill="#fce7f3" stroke="#db2777"/><text x="310" y="97" text-anchor="middle">pnƒÖ</text>
+    <rect x="380" y="70" width="100" height="44" rx="6" fill="#fee2e2" stroke="#dc2626"/><text x="430" y="97" text-anchor="middle">‡ö Æ</text>
+    <rect x="500" y="70" width="100" height="44" rx="6" fill="#f1f5f9" stroke="#64748b"/><text x="550" y="97" text-anchor="middle">Ò"l:</text>
+    <rect x="620" y="70" width="60" height="44" rx="6" fill="#ecfdf5" stroke="#10b981"/><text x="650" y="97" text-anchor="middle">$</text>
+  </g>
+  <text x="350" y="170" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b">T1566 ’ *åw ’ StealBit ’ T1486</text>
+</svg>

@@ -56,7 +56,7 @@ function statusLabel(status: string) {
     <PageShell wide>
       <PageHeader
         title="采集配置"
-        description="采集源与调度，供 service ingest 模块使用；产物进入情报工作台待审。"
+        description="采集源与调度，供 service ingest 模块使用；产物进入采集队列并自动流水线处理。"
       />
 
       <FilterCard>

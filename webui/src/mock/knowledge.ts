@@ -6,6 +6,10 @@ import type {
   ExploitedVulnerability,
   KnowledgeDetail,
   KnowledgeDimensionCounts,
+  KnowledgePipelineSource,
+  KnowledgeProcedure,
+  KnowledgeStatus,
+  KnowledgeUpdatePayload,
   MalwareRef,
 } from '@/types/knowledge'
 import type { AttackTechnique } from '@/types/intel'
@@ -14,11 +18,16 @@ import {
   computeKnowledgeQuality,
   knowledgeQualityInput,
 } from '@/utils/quality'
+import { invalidateAggregateCache } from '@/analytics/aggregate'
+import { getIntelById } from '@/mock/intel'
+import { computeNeedsReview } from '@/utils/knowledge-review'
+import { collectFiguresForIntelIds } from '@/utils/intel-figures'
 
 interface RawKnowledge {
   id: number
   title: string
   summary: string | null
+  status: KnowledgeStatus
   targetIndustries: string[]
   techniques: AttackTechnique[]
   tools: AttackTool[]
@@ -26,6 +35,8 @@ interface RawKnowledge {
   vulnerabilities: ExploitedVulnerability[]
   malware: MalwareRef[]
   threatActors: string[]
+  procedures: KnowledgeProcedure[]
+  pipeline: KnowledgePipelineSource | null
   linkedIntel: {
     id: number
     title: string
@@ -42,6 +53,7 @@ const RAW: RawKnowledge[] = [
     title: 'Log4j2 漏洞在野利用与多恶意家族传播',
     summary:
       '攻击者利用 CVE-2021-44228（Log4Shell）在公网暴露的 Java 服务中植入后门与僵尸网络载荷，出现至少十个恶意家族并呈持续扩散态势。',
+    status: 'draft',
     targetIndustries: ['互联网'],
     techniques: [
       {
@@ -55,6 +67,13 @@ const RAW: RawKnowledge[] = [
         techniqueId: 'T1059',
         name: 'Command and Scripting Interpreter',
         description: '投递 shell 脚本或二进制载荷执行。',
+      },
+    ],
+    procedures: [
+      {
+        techniqueId: 'T1190',
+        text: '攻击者向暴露的 Java 服务发送含 JNDI LDAP URL 的恶意载荷，触发 Log4Shell 远程代码执行。',
+        evidenceIntelId: 4203,
       },
     ],
     tools: [
@@ -81,7 +100,15 @@ const RAW: RawKnowledge[] = [
       { name: 'Generic.Backdoor', class: 'backdoor' },
       { name: 'Moobot', class: 'botnet' },
     ],
-    threatActors: [],
+    threatActors: ['多家族利用团伙'],
+    pipeline: {
+      lastIntelId: 4207,
+      lastIntelTitle:
+        'Ten families of malicious samples are spreading using the Log4j2 vulnerability Now',
+      knowledgeAction: 'updated',
+      extractConfidence: 0.89,
+      pipelinedAt: '2026-05-30T09:00:00Z',
+    },
     linkedIntel: [
       {
         id: 4203,
@@ -92,20 +119,74 @@ const RAW: RawKnowledge[] = [
         role: 'primary',
       },
       {
-        id: 4205,
-        title: 'CERT advisory: active Log4Shell exploitation in critical sectors',
-        sourceName: 'CERT',
-        disclosedAt: '2026-05-18',
+        id: 4207,
+        title:
+          'Ten families of malicious samples are spreading using the Log4j2 vulnerability Now',
+        sourceName: '360',
+        disclosedAt: null,
         role: 'supporting',
       },
     ],
     updatedAt: '2026-05-30T10:00:00Z',
   },
   {
+    id: 1005,
+    title: '国家级 CERT：关键行业 Log4Shell 在野利用通告',
+    summary:
+      'CERT 通告确认关键基础设施与制造等行业持续出现 CVE-2021-44228 在野利用，建议优先修补与监测 JNDI 外联。',
+    status: 'draft',
+    targetIndustries: ['制造业', '能源电力'],
+    techniques: [
+      {
+        tactic: 'Initial Access',
+        techniqueId: 'T1190',
+        name: 'Exploit Public-Facing Application',
+        description: '针对暴露 Java 服务的 Log4Shell 利用。',
+      },
+    ],
+    procedures: [],
+    tools: [],
+    infrastructure: [
+      {
+        type: 'domain',
+        value: 'log4j-c2.example.invalid',
+        role: 'c2',
+        confidence: 'low',
+      },
+    ],
+    vulnerabilities: [
+      {
+        cveId: 'CVE-2021-44228',
+        description: 'Apache Log4j2 JNDI 注入',
+        inWild: true,
+      },
+    ],
+    malware: [],
+    threatActors: [],
+    pipeline: {
+      lastIntelId: 4205,
+      lastIntelTitle: 'CERT advisory: active Log4Shell exploitation in critical sectors',
+      knowledgeAction: 'created',
+      extractConfidence: 0.88,
+      pipelinedAt: '2026-05-19T08:00:00Z',
+    },
+    linkedIntel: [
+      {
+        id: 4205,
+        title: 'CERT advisory: active Log4Shell exploitation in critical sectors',
+        sourceName: 'CERT',
+        disclosedAt: '2026-05-18',
+        role: 'primary',
+      },
+    ],
+    updatedAt: '2026-05-19T10:00:00Z',
+  },
+  {
     id: 1002,
     title: 'Sysrv-hello 通过被控网站向终端投递恶意程序',
     summary:
       'Sysrv-hello 僵尸网络更新传播链：入侵 Web 服务器后篡改页面，诱导访问者下载 Windows 可执行恶意文件。',
+    status: 'draft',
     targetIndustries: ['互联网'],
     techniques: [
       {
@@ -115,6 +196,7 @@ const RAW: RawKnowledge[] = [
         description: 'Web 服务被入侵后作为恶意文件分发节点。',
       },
     ],
+    procedures: [],
     tools: [{ name: 'Sysrv-hello', category: '恶意载荷', description: '跨平台僵尸网络主程序' }],
     infrastructure: [
       {
@@ -126,7 +208,15 @@ const RAW: RawKnowledge[] = [
     ],
     vulnerabilities: [],
     malware: [{ name: 'Sysrv-hello', class: 'botnet' }],
-    threatActors: [],
+    threatActors: ['Sysrv operators'],
+    pipeline: {
+      lastIntelId: 4234,
+      lastIntelTitle:
+        "Threat Alert: New update from Sysrv-hello, now infecting victims' webpages to push malicious exe to end users",
+      knowledgeAction: 'created',
+      extractConfidence: 0.85,
+      pipelinedAt: '2026-05-29T10:00:00Z',
+    },
     linkedIntel: [
       {
         id: 4234,
@@ -144,6 +234,7 @@ const RAW: RawKnowledge[] = [
     title: 'Mirai 变种针对能源行业互联网暴露工控资产',
     summary:
       '基于 Mirai 的僵尸网络扫描能源电力行业中暴露在互联网的工控网关与远程维护接口，尝试默认口令与 Telnet 暴力破解，并具备 DDoS 影响能力。',
+    status: 'published',
     targetIndustries: ['能源电力'],
     techniques: [
       {
@@ -159,6 +250,7 @@ const RAW: RawKnowledge[] = [
         description: '继承 Mirai 家族的 DDoS 攻击能力。',
       },
     ],
+    procedures: [],
     tools: [
       { name: 'Mirai', category: '僵尸网络', description: '扫描与感染模块' },
       { name: 'telnet brute', category: '攻击模块', description: '默认口令字典爆破' },
@@ -176,6 +268,13 @@ const RAW: RawKnowledge[] = [
     vulnerabilities: [],
     malware: [{ name: 'Mirai', class: 'botnet' }],
     threatActors: ['Unknown cluster'],
+    pipeline: {
+      lastIntelId: 4301,
+      lastIntelTitle: 'Mirai variant targets energy sector ICS exposed to internet',
+      knowledgeAction: 'created',
+      extractConfidence: 0.9,
+      pipelinedAt: '2026-05-25T12:00:00Z',
+    },
     linkedIntel: [
       {
         id: 4301,
@@ -192,6 +291,7 @@ const RAW: RawKnowledge[] = [
     title: 'LockBit 勒索软件针对制造业的双扩展加密活动',
     summary:
       '攻击者以钓鱼与暴露 RDP 初始入侵，部署 LockBit 3.0 进行数据窃取与双重勒索；部分样本使用 BYOVD 驱动尝试禁用安全产品。',
+    status: 'published',
     targetIndustries: ['制造业', '互联网'],
     techniques: [
       {
@@ -207,6 +307,7 @@ const RAW: RawKnowledge[] = [
         description: '文件加密并留下勒索信。',
       },
     ],
+    procedures: [],
     tools: [
       { name: 'LockBit 3.0', category: '勒索软件', description: '主勒索载荷' },
       { name: 'StealBit', category: '窃密', description: '数据外传模块' },
@@ -240,6 +341,13 @@ const RAW: RawKnowledge[] = [
       { name: 'Infostealer模块', class: 'trojan' },
     ],
     threatActors: ['LockBit affiliate'],
+    pipeline: {
+      lastIntelId: 4320,
+      lastIntelTitle: 'Ransomware advisory: LockBit campaigns against manufacturing sector',
+      knowledgeAction: 'created',
+      extractConfidence: 0.87,
+      pipelinedAt: '2026-05-23T09:00:00Z',
+    },
     linkedIntel: [
       {
         id: 4320,
@@ -263,12 +371,13 @@ function dimensionCounts(raw: RawKnowledge): KnowledgeDimensionCounts {
   }
 }
 
-function toDetail(raw: RawKnowledge): KnowledgeDetail {
+function rebuildDetail(raw: RawKnowledge): KnowledgeDetail {
   const attackMatrix = resolveAttackMatrix(raw.targetIndustries)
   const partial = {
     id: raw.id,
     title: raw.title,
     summary: raw.summary,
+    status: raw.status,
     targetIndustries: raw.targetIndustries,
     attackMatrix,
     malware: raw.malware,
@@ -278,19 +387,39 @@ function toDetail(raw: RawKnowledge): KnowledgeDetail {
     infrastructure: raw.infrastructure,
     vulnerabilities: raw.vulnerabilities,
     linkedIntel: raw.linkedIntel,
+    procedures: raw.procedures,
+    pipeline: raw.pipeline,
     intelCount: raw.linkedIntel.length,
     updatedAt: raw.updatedAt,
     dimensions: dimensionCounts(raw),
   }
   const input = knowledgeQualityInput(partial as KnowledgeDetail)
+  const qualityScore = computeKnowledgeQuality(input)
+  const needsReview = computeNeedsReview({
+    status: raw.status,
+    qualityScore,
+    intelCount: raw.linkedIntel.length,
+  })
+  const evidenceFigures = collectFiguresForIntelIds(
+    raw.linkedIntel.map((i) => i.id),
+    (id) => getIntelById(id),
+  )
+
   return {
     ...partial,
-    qualityScore: computeKnowledgeQuality(input),
+    qualityScore,
     qualityHints: buildKnowledgeQualityHints(input),
+    needsReview,
+    evidenceFigures,
   }
 }
 
-export const KNOWLEDGE_DETAILS: KnowledgeDetail[] = RAW.map(toDetail)
+/** Mutable in-memory catalog for Demo saves / merge. */
+export const KNOWLEDGE_DETAILS: KnowledgeDetail[] = RAW.map(rebuildDetail)
+
+function findRawIndex(id: number): number {
+  return RAW.findIndex((r) => r.id === id)
+}
 
 export function getKnowledgeById(id: number): KnowledgeDetail | undefined {
   return KNOWLEDGE_DETAILS.find((k) => k.id === id)
@@ -298,6 +427,57 @@ export function getKnowledgeById(id: number): KnowledgeDetail | undefined {
 
 export function getKnowledgeByIntelId(intelId: number): KnowledgeDetail[] {
   return KNOWLEDGE_DETAILS.filter((k) => k.linkedIntel.some((i) => i.id === intelId))
+}
+
+export function updateKnowledgeInStore(
+  id: number,
+  payload: KnowledgeUpdatePayload,
+): KnowledgeDetail | null {
+  const idx = findRawIndex(id)
+  const storeIdx = KNOWLEDGE_DETAILS.findIndex((k) => k.id === id)
+  if (idx < 0 || storeIdx < 0) return null
+
+  const raw = RAW[idx]
+  if (payload.title !== undefined) raw.title = payload.title
+  if (payload.summary !== undefined) raw.summary = payload.summary
+  if (payload.targetIndustries !== undefined) raw.targetIndustries = [...payload.targetIndustries]
+  if (payload.status !== undefined) raw.status = payload.status
+  raw.updatedAt = new Date().toISOString()
+
+  const rebuilt = rebuildDetail(raw)
+  KNOWLEDGE_DETAILS[storeIdx] = rebuilt
+  invalidateAggregateCache()
+  return rebuilt
+}
+
+export function mergeKnowledgeInStore(sourceId: number, targetId: number): boolean {
+  const srcRawIdx = findRawIndex(sourceId)
+  const tgtRawIdx = findRawIndex(targetId)
+  if (srcRawIdx < 0 || tgtRawIdx < 0 || sourceId === targetId) return false
+
+  const src = RAW[srcRawIdx]
+  const tgt = RAW[tgtRawIdx]
+
+  for (const intel of src.linkedIntel) {
+    if (!tgt.linkedIntel.some((i) => i.id === intel.id)) {
+      tgt.linkedIntel.push({ ...intel, role: 'supporting' })
+    }
+  }
+  tgt.updatedAt = new Date().toISOString()
+
+  const storeSrc = KNOWLEDGE_DETAILS.findIndex((k) => k.id === sourceId)
+  const storeTgt = KNOWLEDGE_DETAILS.findIndex((k) => k.id === targetId)
+  if (storeSrc < 0 || storeTgt < 0) return false
+
+  RAW.splice(srcRawIdx, 1)
+  const newTgtRawIdx = srcRawIdx < tgtRawIdx ? tgtRawIdx - 1 : tgtRawIdx
+
+  KNOWLEDGE_DETAILS.splice(storeSrc, 1)
+  const newStoreTgt = storeSrc < storeTgt ? storeTgt - 1 : storeTgt
+
+  KNOWLEDGE_DETAILS[newStoreTgt] = rebuildDetail(RAW[newTgtRawIdx])
+  invalidateAggregateCache()
+  return true
 }
 
 export function listMalwareClassesInUse(): MalwareClass[] {

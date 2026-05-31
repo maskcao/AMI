@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { InfoFilled, WarningFilled } from '@element-plus/icons-vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 
 defineProps<{
   mode: 'knowledge' | 'intel'
@@ -12,13 +12,14 @@ defineProps<{
     <div>
       <strong>攻击知识库</strong>：沉淀手法、工具、基础设施、漏洞、恶意软件等结构化认知，可挂载多份情报作为依据。
       <span class="sep">|</span>
-      <strong>情报工作台</strong>：管理原始报告与 IOC，属于证据层。
+      可选人工合并/纠错；情报侧由流水线自动写入，不在此审核单则报告。
     </div>
   </div>
-  <div v-else class="help help--warn">
-    <el-icon class="help-icon"><WarningFilled /></el-icon>
+  <div v-else class="help help--info">
+    <el-icon class="help-icon"><InfoFilled /></el-icon>
     <div>
-      此处管理单则报告的采集与审核；TTP、工具、漏洞等请在 <strong>攻击知识库</strong> 维护并关联本情报。
+      <strong>采集处理队列</strong>：采集 → 解析 → AI 抽取 → 写攻击知识（<strong>仅同标题报告合并</strong>，否则新建）。
+      本页用于观测状态、失败重试与溯源；TTP、实体维度请在 <strong>攻击知识库</strong> 维护。
     </div>
   </div>
 </template>
@@ -38,11 +39,6 @@ defineProps<{
   background: var(--ami-accent-soft);
   border: 1px solid #bfdbfe;
   color: #1e40af;
-}
-.help--warn {
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  color: #92400e;
 }
 .help-icon {
   font-size: 18px;

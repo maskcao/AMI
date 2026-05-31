@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-label="Log4Shell attack flow">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#475569"/>
+    </marker>
+  </defs>
+  <rect width="720" height="200" fill="#f8fafc"/>
+  <text x="360" y="28" text-anchor="middle" font-family="Inter,sans-serif" font-size="14" font-weight="600" fill="#0f172a">Log4Shell (Î)(þ:	</text>
+  <g font-family="Inter,sans-serif" font-size="12" fill="#334155">
+    <rect x="24" y="60" width="120" height="48" rx="8" fill="#dbeafe" stroke="#3b82f6"/>
+    <text x="84" y="88" text-anchor="middle">´2 Java ¡</text>
+    <rect x="184" y="60" width="120" height="48" rx="8" fill="#fef3c7" stroke="#f59e0b"/>
+    <text x="244" y="88" text-anchor="middle">JNDI èe}w</text>
+    <rect x="344" y="60" width="120" height="48" rx="8" fill="#fce7f3" stroke="#ec4899"/>
+    <text x="404" y="88" text-anchor="middle">LDAP Þ C2</text>
+    <rect x="504" y="60" width="120" height="48" rx="8" fill="#fee2e2" stroke="#ef4444"/>
+    <text x="564" y="88" text-anchor="middle">è / õ8}w</text>
+    <rect x="644" y="60" width="56" height="48" rx="8" fill="#e2e8f0" stroke="#64748b"/>
+    <text x="672" y="88" text-anchor="middle">ic</text>
+  </g>
+  <line x1="144" y1="84" x2="184" y2="84" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="304" y1="84" x2="344" y2="84" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="464" y1="84" x2="504" y2="84" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="624" y1="84" x2="644" y2="84" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="360" y="150" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" fill="#64748b">MITRE: T1190 ’ T1059 · CVE-2021-44228</text>
+</svg>
