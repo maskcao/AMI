@@ -4,6 +4,7 @@
 |------|------------|
 | **Attack knowledge（攻击知识）** | **Core object.** Durable, analyst-validated understanding of attack behavior: TTPs, procedures, industries, involved actors/malware. Primary search and API unit. |
 | **Intel report（情报）** | **Evidence layer.** One ingested report, blog post, or alert (`IntelReport`). Supports one or more attack knowledge items; holds original text and extracted IOCs. |
+| **Title merge（标题合并）** | Pipeline rule: update the same attack knowledge only when `IntelReport.title` matches an existing report; otherwise create new knowledge. |
 | **Intel entry** | Demo/API alias for `IntelReport` until Phase 2 split. |
 | **Entity（实体）** | ThreatActor, Malware, Campaign — referenced by attack knowledge, not the product center. |
 | **IOC** | Indicator extracted from intel reports; subsidiary evidence, **not** the default home-page pivot (unlike OpenCTI observable search). |

@@ -1,0 +1,15 @@
+{
+  "intelId": 11,
+  "sourceUrl": "https://blog.netlab.360.com/tag/mirai/",
+  "fetchedAt": "2026-05-31T08:40:25Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "baed57ab0068b55e0d77f5f6a6b41e04fca7360fbf34c810c51f47dbe43485a6",
+      "sizeBytes": 47285
+    }
+  ]
+}

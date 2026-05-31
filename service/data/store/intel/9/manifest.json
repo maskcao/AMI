@@ -1,0 +1,15 @@
+{
+  "intelId": 9,
+  "sourceUrl": "https://blog.netlab.360.com/tag/dnsmon/",
+  "fetchedAt": "2026-05-31T08:40:24Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "986f01ba0eede8af4004f3190475f70f2ab0e7e7b43c594396b6bf6589b73f10",
+      "sizeBytes": 52833
+    }
+  ]
+}

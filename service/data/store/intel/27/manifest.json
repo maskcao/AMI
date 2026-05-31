@@ -1,0 +1,15 @@
+{
+  "intelId": 27,
+  "sourceUrl": "https://blog.netlab.360.com/some_details_of_the_ddos_attacks_targeting_ukraine_and_russia_in_recent_days/",
+  "fetchedAt": "2026-05-31T08:40:27Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "eb5e4f479f117447be2317e8e8fc4aefb2e5d982d427d74add0f956109fad01d",
+      "sizeBytes": 39694
+    }
+  ]
+}

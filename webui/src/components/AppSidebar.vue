@@ -8,29 +8,44 @@ import {
   DataLine,
   Document,
   Download,
+  FolderOpened,
   List,
   Reading,
-  Setting,
+  Tickets,
+  Tools,
 } from '@element-plus/icons-vue'
+import NavGroup from '@/components/NavGroup.vue'
 import { THREAT_LIB_NAV_ITEMS } from '@/constants/threat-lib-nav'
 
 const route = useRoute()
 const router = useRouter()
 
 const threatLibOpen = ref(false)
+const dataCenterOpen = ref(false)
 const settingsOpen = ref(false)
+const threatGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
+const dataCenterGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
+const settingsGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
 
 watch(
   () => route.path,
   (path) => {
     threatLibOpen.value = path.startsWith('/analytics/')
+    dataCenterOpen.value = path.startsWith('/datacenter')
     settingsOpen.value = path.startsWith('/settings')
+    if (path.startsWith('/analytics/')) threatGroupRef.value?.mountSubmenu()
+    if (path.startsWith('/datacenter')) dataCenterGroupRef.value?.mountSubmenu()
+    if (path.startsWith('/settings')) settingsGroupRef.value?.mountSubmenu()
   },
   { immediate: true },
 )
 
 function toggleThreatLib() {
   threatLibOpen.value = !threatLibOpen.value
+}
+
+function toggleDataCenter() {
+  dataCenterOpen.value = !dataCenterOpen.value
 }
 
 function toggleSettings() {
@@ -43,6 +58,16 @@ const primaryNavItems = [
 ]
 
 const ingestQueueNav = { path: '/intel', label: '采集队列', icon: markRaw(List) }
+
+const groupIcons = {
+  threat: markRaw(Collection),
+  dataCenter: markRaw(FolderOpened),
+  settings: markRaw(Tools),
+}
+
+const dataCenterChildren: { path: string; label: string; icon: Component }[] = [
+  { path: '/datacenter/logs', label: '运行日志', icon: markRaw(Tickets) },
+]
 
 const settingsChildren: { path: string; label: string; icon: Component }[] = [
   { path: '/settings/collect', label: '采集配置', icon: markRaw(Download) },
@@ -69,6 +94,11 @@ const activeThreatDim = computed(() => {
   return dim && dim !== 'overview' ? `/analytics/${dim}` : ''
 })
 
+const activeDataCenterPath = computed(() => {
+  if (route.path.startsWith('/datacenter/logs')) return '/datacenter/logs'
+  return ''
+})
+
 const activeSettingsPath = computed(() => {
   if (route.path.startsWith('/settings/collect')) return '/settings/collect'
   if (route.path.startsWith('/settings/parser')) return '/settings/parser'
@@ -79,6 +109,7 @@ const activeSettingsPath = computed(() => {
 })
 
 const threatLibGroupActive = computed(() => route.path.startsWith('/analytics/'))
+const dataCenterGroupActive = computed(() => route.path.startsWith('/datacenter'))
 const settingsGroupActive = computed(() => route.path.startsWith('/settings'))
 
 function go(path: string) {
@@ -89,9 +120,23 @@ function isTopActive(path: string) {
   return activeTop.value === path
 }
 
-/** Warm route chunk before user picks a dimension (does not block menu toggle). */
+function primeSubmenus() {
+  threatGroupRef.value?.mountSubmenu()
+  dataCenterGroupRef.value?.mountSubmenu()
+  settingsGroupRef.value?.mountSubmenu()
+}
+
 onMounted(() => {
-  void import('@/views/AnalyticsHub.vue')
+  const schedule =
+    typeof requestIdleCallback === 'function'
+      ? requestIdleCallback
+      : (cb: () => void) => window.setTimeout(cb, 120)
+  schedule(() => {
+    primeSubmenus()
+    void import('@/views/AnalyticsHub.vue')
+    void import('@/views/settings/SettingsCollectPage.vue')
+    void import('@/views/datacenter/RuntimeLogPage.vue')
+  })
 })
 </script>
 
@@ -118,26 +163,26 @@ onMounted(() => {
         <span class="nav-label">{{ item.label }}</span>
       </button>
 
-      <div class="nav-group" :class="{ open: threatLibOpen, active: threatLibGroupActive }">
-        <button type="button" class="nav-item nav-group-head" @click="toggleThreatLib">
-          <el-icon class="nav-icon"><Collection /></el-icon>
-          <span class="nav-label">威胁情报库</span>
-          <span class="nav-chevron" :class="{ open: threatLibOpen }">›</span>
+      <NavGroup
+        ref="threatGroupRef"
+        label="威胁情报库"
+        :icon="groupIcons.threat"
+        :open="threatLibOpen"
+        :active="threatLibGroupActive"
+        @toggle="toggleThreatLib"
+      >
+        <button
+          v-for="child in THREAT_LIB_NAV_ITEMS"
+          :key="child.key"
+          type="button"
+          class="nav-sub-item"
+          :class="{ active: activeThreatDim === `/analytics/${child.key}` }"
+          @click="go(`/analytics/${child.key}`)"
+        >
+          <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
+          <span class="sub-label">{{ child.label }}</span>
         </button>
-        <div class="nav-sub">
-          <button
-            v-for="child in THREAT_LIB_NAV_ITEMS"
-            :key="child.key"
-            type="button"
-            class="nav-sub-item"
-            :class="{ active: activeThreatDim === `/analytics/${child.key}` }"
-            @click="go(`/analytics/${child.key}`)"
-          >
-            <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
-            <span class="sub-label">{{ child.label }}</span>
-          </button>
-        </div>
-      </div>
+      </NavGroup>
 
       <button
         type="button"
@@ -149,26 +194,47 @@ onMounted(() => {
         <span class="nav-label">{{ ingestQueueNav.label }}</span>
       </button>
 
-      <div class="nav-group" :class="{ open: settingsOpen, active: settingsGroupActive }">
-        <button type="button" class="nav-item nav-group-head" @click="toggleSettings">
-          <el-icon class="nav-icon"><Setting /></el-icon>
-          <span class="nav-label">系统配置</span>
-          <span class="nav-chevron" :class="{ open: settingsOpen }">›</span>
+      <NavGroup
+        ref="dataCenterGroupRef"
+        label="数据中心"
+        :icon="groupIcons.dataCenter"
+        :open="dataCenterOpen"
+        :active="dataCenterGroupActive"
+        @toggle="toggleDataCenter"
+      >
+        <button
+          v-for="child in dataCenterChildren"
+          :key="child.path"
+          type="button"
+          class="nav-sub-item"
+          :class="{ active: activeDataCenterPath === child.path }"
+          @click="go(child.path)"
+        >
+          <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
+          <span class="sub-label">{{ child.label }}</span>
         </button>
-        <div class="nav-sub">
-          <button
-            v-for="child in settingsChildren"
-            :key="child.path"
-            type="button"
-            class="nav-sub-item"
-            :class="{ active: activeSettingsPath === child.path }"
-            @click="go(child.path)"
-          >
-            <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
-            <span class="sub-label">{{ child.label }}</span>
-          </button>
-        </div>
-      </div>
+      </NavGroup>
+
+      <NavGroup
+        ref="settingsGroupRef"
+        label="系统配置"
+        :icon="groupIcons.settings"
+        :open="settingsOpen"
+        :active="settingsGroupActive"
+        @toggle="toggleSettings"
+      >
+        <button
+          v-for="child in settingsChildren"
+          :key="child.path"
+          type="button"
+          class="nav-sub-item"
+          :class="{ active: activeSettingsPath === child.path }"
+          @click="go(child.path)"
+        >
+          <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
+          <span class="sub-label">{{ child.label }}</span>
+        </button>
+      </NavGroup>
     </nav>
 
     <div class="aside-footer">
@@ -232,11 +298,6 @@ onMounted(() => {
   overflow-y: auto;
   overflow-x: hidden;
 }
-.nav-group {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
 .nav-item {
   display: flex;
   align-items: center;
@@ -250,7 +311,6 @@ onMounted(() => {
   font-size: 14px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s, color 0.12s;
 }
 .nav-item:hover {
   background: var(--ami-sidebar-hover);
@@ -260,34 +320,6 @@ onMounted(() => {
   background: var(--ami-sidebar-active);
   color: #fff;
   box-shadow: inset 3px 0 0 #3b82f6;
-}
-.nav-group.active .nav-group-head {
-  color: #f1f5f9;
-}
-.nav-group-head {
-  margin-bottom: 2px;
-}
-.nav-chevron {
-  margin-left: auto;
-  font-size: 16px;
-  transition: transform 0.12s;
-  opacity: 0.7;
-}
-.nav-chevron.open {
-  transform: rotate(90deg);
-}
-.nav-group:not(.open) > .nav-sub {
-  display: none;
-}
-.nav-group.open > .nav-sub {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.nav-sub {
-  padding: 4px 0 8px 8px;
-  margin-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 .nav-sub-item {
   display: flex;
@@ -302,7 +334,6 @@ onMounted(() => {
   font-size: 13px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s, color 0.12s;
 }
 .nav-sub-item:hover {
   background: var(--ami-sidebar-hover);

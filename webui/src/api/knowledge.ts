@@ -1,3 +1,5 @@
+import { apiFetch, USE_API } from '@/api/http'
+import { hydrateAnalytics, invalidateAnalyticsCache } from '@/api/analytics'
 import {
   KNOWLEDGE_DETAILS,
   getKnowledgeById,
@@ -13,6 +15,7 @@ import type {
   KnowledgeUpdatePayload,
 } from '@/types/knowledge'
 import { computeNeedsReview } from '@/utils/knowledge-review'
+import { normalizeMalwareRefs } from '@/utils/malware-ref'
 
 const MOCK_DELAY_MS = 180
 
@@ -64,6 +67,25 @@ function applyReviewFilter(
 export async function listKnowledge(
   params: KnowledgeListParams = {},
 ): Promise<KnowledgeListResult> {
+  if (USE_API) {
+    const q = new URLSearchParams()
+    if (params.q?.trim()) q.set('q', params.q.trim())
+    if (params.review === 'needs_review') q.set('needsReview', 'true')
+    if (params.review === 'published') q.set('status', 'published')
+    if (params.review === 'draft') q.set('status', 'draft')
+    if (params.matrix) q.set('matrix', params.matrix)
+    if (params.industries?.length) q.set('industry', params.industries[0])
+    if (params.malwareClass) q.set('malwareClass', params.malwareClass)
+    const qs = q.toString()
+    const res = await apiFetch<KnowledgeListResult>(`/api/v1/knowledge${qs ? `?${qs}` : ''}`)
+    const needsReviewCount = res.items.filter((i) => i.needsReview).length
+    return {
+      ...res,
+      needsReviewCount,
+      items: res.items.map((i) => ({ ...i, malware: normalizeMalwareRefs(i.malware) })),
+    }
+  }
+
   const needsReviewCount = KNOWLEDGE_DETAILS.filter((d) =>
     computeNeedsReview({
       status: d.status,
@@ -99,7 +121,25 @@ export async function listKnowledge(
   return delay({ items, total: items.length, needsReviewCount })
 }
 
+function normalizeKnowledgeDetail(row: KnowledgeDetail): KnowledgeDetail {
+  return {
+    ...row,
+    malware: normalizeMalwareRefs(row.malware),
+    linkedIntel: Array.isArray(row.linkedIntel) ? row.linkedIntel : [],
+    techniques: Array.isArray(row.techniques) ? row.techniques : [],
+    evidenceFigures: Array.isArray(row.evidenceFigures) ? row.evidenceFigures : [],
+  }
+}
+
 export async function getKnowledge(id: number): Promise<KnowledgeDetail | null> {
+  if (USE_API) {
+    try {
+      const row = await apiFetch<KnowledgeDetail>(`/api/v1/knowledge/${id}`)
+      return row ? normalizeKnowledgeDetail(row) : null
+    } catch {
+      return null
+    }
+  }
   return delay(getKnowledgeById(id) ?? null)
 }
 
@@ -107,13 +147,46 @@ export async function updateKnowledge(
   id: number,
   payload: KnowledgeUpdatePayload,
 ): Promise<KnowledgeDetail | null> {
+  if (USE_API) {
+    try {
+      return await apiFetch<KnowledgeDetail>(`/api/v1/knowledge/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    } catch {
+      return null
+    }
+  }
   return delay(updateKnowledgeInStore(id, payload))
 }
 
 export async function publishKnowledge(id: number): Promise<KnowledgeDetail | null> {
+  if (USE_API) {
+    try {
+      const detail = await apiFetch<KnowledgeDetail>(`/api/v1/knowledge/${id}/publish`, {
+        method: 'POST',
+      })
+      invalidateAnalyticsCache()
+      await hydrateAnalytics(true)
+      return detail
+    } catch {
+      return null
+    }
+  }
   return delay(updateKnowledgeInStore(id, { status: 'published' }))
 }
 
 export async function mergeKnowledge(payload: KnowledgeMergePayload): Promise<boolean> {
+  if (USE_API) {
+    try {
+      await apiFetch<{ ok: boolean }>(`/api/v1/knowledge/merge`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
   return delay(mergeKnowledgeInStore(payload.sourceId, payload.targetId))
 }

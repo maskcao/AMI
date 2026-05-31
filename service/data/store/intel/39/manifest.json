@@ -1,0 +1,15 @@
+{
+  "intelId": 39,
+  "sourceUrl": "https://blog.netlab.360.com/tag/ddos/",
+  "fetchedAt": "2026-05-31T09:10:25Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "4e570b9b86c05d9a9ab86216032733844bf13469d072153348d9053a5f1f52c2",
+      "sizeBytes": 49313
+    }
+  ]
+}

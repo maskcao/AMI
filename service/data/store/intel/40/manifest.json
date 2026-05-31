@@ -1,0 +1,15 @@
+{
+  "intelId": 40,
+  "sourceUrl": "https://blog.netlab.360.com/rimasuta-spread-with-ruijie-0day-en/",
+  "fetchedAt": "2026-05-31T09:22:56Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "bfd22062d3f1b3cd966b32499f57e36fc2a8e5dbc8c663e5df08a66ca8b8e926",
+      "sizeBytes": 39345
+    }
+  ]
+}

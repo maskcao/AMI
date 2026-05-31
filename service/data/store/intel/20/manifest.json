@@ -1,0 +1,15 @@
+{
+  "intelId": 20,
+  "sourceUrl": "https://blog.netlab.360.com/purecrypter/",
+  "fetchedAt": "2026-05-31T08:40:26Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "3aefd3e4a172e8414c03dcf9519d3ab310dbe06ff0072d0115f17fbc6ccbd734",
+      "sizeBytes": 39647
+    }
+  ]
+}

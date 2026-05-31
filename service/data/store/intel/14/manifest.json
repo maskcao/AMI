@@ -1,0 +1,15 @@
+{
+  "intelId": 14,
+  "sourceUrl": "https://blog.netlab.360.com/headsup_xdr33_variant_of_ciahive_emeerges/",
+  "fetchedAt": "2026-05-31T08:40:25Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "e9e9f7e752abd3721adc68de91844c2d7279f2375709976bdeaaf362d9791a43",
+      "sizeBytes": 51612
+    }
+  ]
+}

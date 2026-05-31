@@ -38,6 +38,11 @@ function statusLabel(status: KnowledgeStatus): string {
   return KNOWLEDGE_STATUS_LABELS[status]
 }
 
+function displayTitle(title: string): string {
+  const t = title?.trim()
+  return t || '（无标题）'
+}
+
 function onSortChange(data: { prop: string; order: string | null }) {
   emit('sortChange', {
     prop: data.prop,
@@ -55,10 +60,17 @@ function onSortChange(data: { prop: string; order: string | null }) {
     @sort-change="onSortChange"
   >
     <el-table-column prop="id" label="ID" width="72" sortable="custom" />
-    <el-table-column label="攻击知识" min-width="280" show-overflow-tooltip>
+    <el-table-column label="标题" min-width="280" class-name="ami-table-title-cell">
       <template #default="{ row }">
         <div class="title-cell">
-          <el-link type="primary" @click="goKnowledge(row.id)">{{ row.title }}</el-link>
+          <el-link
+            type="primary"
+            class="ami-title-wrap knowledge-title-link"
+            :class="{ 'is-untitled': !row.title?.trim() }"
+            @click="goKnowledge(row.id)"
+          >
+            {{ displayTitle(row.title) }}
+          </el-link>
           <el-tag v-if="row.needsReview" type="warning" size="small" effect="plain" class="review-tag">
             待复核
           </el-tag>
@@ -125,11 +137,24 @@ function onSortChange(data: { prop: string; order: string | null }) {
 .title-cell {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
+}
+.knowledge-title-link {
+  height: auto;
+  line-height: 1.5;
+}
+.knowledge-title-link :deep(.el-link__inner) {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 .review-tag {
   flex-shrink: 0;
+}
+.title-cell .is-untitled {
+  color: var(--el-text-color-secondary);
+  font-style: italic;
 }
 .dim-text {
   font-size: 12px;

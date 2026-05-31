@@ -1,0 +1,15 @@
+{
+  "intelId": 10,
+  "sourceUrl": "https://blog.netlab.360.com/tag/pdns/",
+  "fetchedAt": "2026-05-31T08:40:25Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "b9107188b5c2cc389fc547c258e776ecc7dd7c0c0329fd3bf4896cf6407578e8",
+      "sizeBytes": 54404
+    }
+  ]
+}

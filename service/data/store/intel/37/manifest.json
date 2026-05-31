@@ -1,0 +1,15 @@
+{
+  "intelId": 37,
+  "sourceUrl": "https://blog.netlab.360.com/pinkbot/",
+  "fetchedAt": "2026-05-31T08:40:28Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "2bf45579629a0719cdeeeb38cd7a62fe15371f0308a5f05c7a516e8a7170c8e5",
+      "sizeBytes": 48453
+    }
+  ]
+}

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>The Mostly Dead Mozi and Its’ Lingering Bots</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <link rel="preload" as="style" href="/assets/built/screen.css?v=00a3abdcf6" />
+    <link rel="preload" as="script" href="/assets/built/casper.js?v=00a3abdcf6" />
+
+    <link rel="stylesheet" type="text/css" href="/assets/built/screen.css?v=00a3abdcf6" />
+
+    <link rel="icon" href="https://blog.netlab.360.com/content/images/size/w256h256/2019/02/netlab_xs-2.png" type="image/png">
+    <link rel="canonical" href="https://blog.netlab.360.com/the-mostly-dead-mozi-and-its-lingering-bots/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    
+    <meta property="og:site_name" content="360 Netlab Blog - Network Security Research Lab at 360">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="The Mostly Dead Mozi and Its’ Lingering Bots">
+    <meta property="og:description" content="Background
+
+
+It has been nearly 2 years since we (360NETLAB) first disclosed the Mozi botnet in December 2019, and in that time we have witnessed its development from a small-scale botnet to a giant that accounted for an extremely high percentage of IOT traffic at its peak.
+
+
+Now that Mozi&#x27;s">
+    <meta property="og:url" content="https://blog.netlab.360.com/the-mostly-dead-mozi-and-its-lingering-bots/">
+    <meta property="og:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta property="article:published_time" content="2021-08-30T14:00:00.000Z">
+    <meta property="article:modified_time" content="2026-05-09T07:06:15.000Z">
+    <meta property="article:tag" content="Botnet">
+    <meta property="article:tag" content="en">
+    <meta property="article:tag" content="Mozi">
+    <meta property="article:tag" content="DDoS">
+    <meta property="article:tag" content="Miner">
+    <meta property="article:tag" content="honeypot">
+    <meta property="article:tag" content="Import 2022-11-30 11:16">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Mostly Dead Mozi and Its’ Lingering Bots">
+    <meta name="twitter:description" content="Background
+
+
+It has been nearly 2 years since we (360NETLAB) first disclosed the Mozi botnet in December 2019, and in that time we have witnessed its development from a small-scale botnet to a giant that accounted for an extremely high percentage of IOT traffic at its peak.
+
+
+Now that Mozi&#x27;s">
+    <meta name="twitter:url" content="https://blog.netlab.360.com/the-mostly-dead-mozi-and-its-lingering-bots/">
+    <meta name="twitter:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Alex.Turing">
+    <meta name="twitter:label2" content="Filed under">
+    <meta name="twitter:data2" content="Botnet, en, Mozi, DDoS, Miner, honeypot, Import 2022-11-30 11:16">
+    <meta name="twitter:site" content="@360Netlab">
+    <meta name="twitter:creator" content="@TuringAlex">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="800">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "360 Netlab Blog - Network Security Research Lab at 360",
+        "url": "https://blog.netlab.360.com/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png"
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Alex.Turing",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/size/w1200/2019/06/turing.PNG",
+            "width": 1200,
+            "height": 1200
+        },
+        "url": "https://blog.netlab.360.com/author/alex/",
+        "sameAs": [
+            "https://x.com/TuringAlex"
+        ]
+    },
+    "contributor": [
+        {
+            "@type": "Person",
+            "name": "Hui Wang",
+            "image": {
+                "@type": "ImageObject",
+                "url": "https://blog.netlab.360.com/content/images/2017/05/WechatIMG1.jpeg"
+            },
+            "url": "https://blog.netlab.360.com/author/huiwang/",
+            "sameAs": []
+        },
+        {
+            "@type": "Person",
+            "name": "Genshen Ye",
+            "image": {
+                "@type": "ImageObject",
+                "url": "https://blog.netlab.360.com/content/images/2017/10/1662072805.jpg"
+            },
+            "url": "https://blog.netlab.360.com/author/yegenshen/",
+            "sameAs": [
+                "https://x.com/zom3y3"
+            ]
+        }
+    ],
+    "headline": "The Mostly Dead Mozi and Its’ Lingering Bots",
+    "url": "https://blog.netlab.360.com/the-mostly-dead-mozi-and-its-lingering-bots/",
+    "datePublished": "2021-08-30T14:00:00.000Z",
+    "dateModified": "2026-05-09T07:06:15.000Z",
+    "keywords": "Botnet, en, Mozi, DDoS, Miner, honeypot, Import 2022-11-30 11:16",
+    "description": "Background\n\n\nIt has been nearly 2 years since we (360NETLAB) first disclosed the Mozi botnet in December 2019, and in that time we have witnessed its development from a small-scale botnet to a giant that accounted for an extremely high percentage of IOT traffic at its peak.\n\n\nNow that Mozi&#x27;s authors have been taking custody by law enforcement agencies, in which we provided technical assistance throughout, we don&#x27;t think it will continue to be updated for quite some time to come. But we know that",
+    "mainEntityOfPage": "https://blog.netlab.360.com/the-mostly-dead-mozi-and-its-lingering-bots/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 6.37">
+    <link rel="alternate" type="application/rss+xml" title="360 Netlab Blog - Network Security Research Lab at 360" href="https://blog.netlab.360.com/rss/">
+    
+    <script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/sodo-search.min.js" data-key="1fd4df542dc24426ca7c59275e" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/main.css" data-sodo-search="https://blog.netlab.360.com/" data-locale="en" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.netlab.360.com/webmentions/receive/" rel="webmention">
+    <script defer src="/public/cards.min.js?v=00a3abdcf6"></script><style>:root {--ghost-accent-color: #eca265;}</style>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=00a3abdcf6">
+    <style type='text/css'>
+	#ghost-portal-root {
+        display: none;
+    }
+</style>
+
+</head>
+<body class="post-template tag-botnet tag-en tag-mozi tag-ddos tag-miner tag-honeypot tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 is-head-left-logo has-sans-body has-cover">
+<div class="viewport">
+
+    <header id="gh-head" class="gh-head outer">
+        <div class="gh-head-inner inner">
+            <div class="gh-head-brand">
+                <a class="gh-head-logo" href="https://blog.netlab.360.com">
+                        <img src="https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png" alt="360 Netlab Blog - Network Security Research Lab at 360">
+                </a>
+                <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <button class="gh-burger" aria-label="Main Menu"></button>
+            </div>
+
+            <nav class="gh-head-menu">
+                <ul class="nav">
+    <li class="nav-botnet"><a href="https://blog.netlab.360.com/tag/botnet/">Botnet</a></li>
+    <li class="nav-dnsmon"><a href="https://blog.netlab.360.com/tag/dnsmon/">DNSMon</a></li>
+    <li class="nav-ddos"><a href="https://blog.netlab.360.com/tag/ddos/">DDoS</a></li>
+    <li class="nav-passivedns"><a href="https://blog.netlab.360.com/tag/pdns/">PassiveDNS</a></li>
+    <li class="nav-mirai"><a href="https://blog.netlab.360.com/tag/mirai/">Mirai</a></li>
+    <li class="nav-dta"><a href="https://blog.netlab.360.com/tag/dta/">DTA</a></li>
+</ul>
+
+            </nav>
+
+            <div class="gh-head-actions">
+                        <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="site-content">
+        
+
+
+
+<main id="site-main" class="site-main">
+<article class="article post tag-botnet tag-en tag-mozi tag-ddos tag-miner tag-honeypot tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image ">
+
+    <header class="article-header gh-canvas">
+
+        <div class="article-tag post-card-tags">
+                <span class="post-card-primary-tag">
+                    <a href="/tag/botnet/">Botnet</a>
+                </span>
+        </div>
+
+        <h1 class="article-title">The Mostly Dead Mozi and Its’ Lingering Bots</h1>
+
+
+        <div class="article-byline">
+        <section class="article-byline-content">
+
+            <ul class="author-list instapaper_ignore">
+                <li class="author-list-item">
+                    <a href="/author/alex/" class="author-avatar" aria-label="Read more of Alex.Turing">
+                        <img class="author-profile-image" src="/content/images/size/w100/2019/06/turing.PNG" alt="Alex.Turing" />
+                    </a>
+                </li>
+                <li class="author-list-item">
+                    <a href="/author/huiwang/" class="author-avatar" aria-label="Read more of Hui Wang">
+                        <img class="author-profile-image" src="/content/images/size/w100/2017/05/WechatIMG1.jpeg" alt="Hui Wang" />
+                    </a>
+                </li>
+                <li class="author-list-item">
+                    <a href="/author/yegenshen/" class="author-avatar" aria-label="Read more of Genshen Ye">
+                        <img class="author-profile-image" src="/content/images/size/w100/2017/10/1662072805.jpg" alt="Genshen Ye" />
+                    </a>
+                </li>
+            </ul>
+
+            <div class="article-byline-meta">
+                <h4 class="author-name"><a href="/author/alex/">Alex.Turing</a>, <a href="/author/huiwang/">Hui Wang</a>, <a href="/author/yegenshen/">Genshen Ye</a></h4>
+                <div class="byline-meta-content">
+                    <time class="byline-meta-date" datetime="2021-08-30">30 Aug 2021</time>
+                        <span class="byline-reading-time"><span class="bull">&bull;</span> 10 min read</span>
+                </div>
+            </div>
+
+        </section>
+        <a href="#/share" class="gh-button gh-button-share">Share</a>
+        </div>
+
+
+    </header>
+
+    <section class="gh-content gh-canvas">
+        <!--kg-card-begin: markdown--><h1 id="background">Background</h1>
+<p>It has been nearly 2 years since we (<strong>360NETLAB</strong>) first disclosed the <a href="https://blog.netlab.360.com/mozi-another-botnet-using-dht/"><strong>Mozi botnet</strong></a> in December 2019, and in that time we have witnessed its development from a small-scale botnet to a giant that accounted for <code>an extremely high percentage of IOT traffic at its peak</code>.</p>
+<p>Now that <strong>Mozi's authors have been taking custody by law enforcement agencies</strong>, in which we provided technical <a href="https://mp.weixin.qq.com/s/Su0-uU5JaUrAh8ptTzTCsA?ref=blog.netlab.360.com">assistance</a> throughout, we don't think it will continue to be updated for quite some time to come. But we know that Mozi uses a P2P network structure, and one of the &quot;advantages&quot; of a P2P network is that it is robust, so even if some of the nodes go down, the whole network will carry on, and the remaining nodes will still infect other vulnerable devices, that is why we can still see Mozi spreading.</p>
+<p>Many security vendors have tracked and analyzed Mozi, but from our point of view, there are some omissions and even mistakes. So here is our provide some updates to complement the security community's analysis; and to conclude our ongoing focus on the Mozi botnet.</p>
+<p>This article will answer the following questions.</p>
+<p><strong>1: Does Mozi have any functional nodes other than the Bot node?</strong></p>
+<p><strong>2: Are there any new features in the Mozi Bot module?</strong></p>
+<p><strong>3: Is the Mozi botnet still being updated?</strong></p>
+<h1 id="whataretheotherfunctionalnodesinthemozibotnetbesidesthebot">What are the other functional nodes in the Mozi botnet besides the Bot?</h1>
+<p>As we all know, each node in the Mozi botnet is driven by a configuration file called Config issued by the Botnet Master to perform specific tasks. The following figure is a classic Config file, where the <code>[ss]</code> field describes the function of the node, in this case the <code>Bot node</code>, the main function is DDoS attacks.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_confbot.PNG"  width="860px" /><br>
+What puzzled us was that, in addition to the Bot node's Config, the following forms of Config files were captured as well, indicating that there were also nodes named <strong>sk,ftp,sns,ssh</strong> in the Mozi botnet.</p>
+<pre><code>[ss]sk[/ss][hp]88888888[/hp][count]http://ia.51.la/go1?id
+[ss]ftp[/ss][hp]88888888[/hp][count]http://ia.51.la/go1?id
+[ss]sns[/ss][hp]88888888[/hp][count]http://ia.51.la/go1?id
+[ss]ssh[/ss][hp]88888888[/hp]
+</code></pre>
+<p>So what exactly are they?</p>
+<h3 id="0x1ftpnode">0x1: FTP node</h3>
+<p>On January 20, 2020, a Windows PE file named &quot;photo.scr&quot; (a9d4007c9419a6e8d55805b8f8f52de0) generated network traffic that matched our Mozi signature. At first we thought it was a false alarm, but after analyzing it, we determined that it was exactly <strong>the Mozi ftp node sample we had in mind</strong>. In order to distinguish the samples from the different functional nodes in the Mozi botnet, we started to use the <code>Mozi_&quot;ss value&quot;</code> internally, so this sample was named <code>Mozi_ftp</code>.</p>
+<p>In short, Mozi_ftp is a pyinstaller-packaged mining trojan that spreads through FTP weak password, and it joins the Mozi P2P network and waits to execute the Config issued by Botnet Master. the wallet address is shown below:</p>
+<pre><code>47BD6QNfkWf8ZMQSdqp2tY1AdG8ofsEPf4mcDp1YB4AX32hUjoLjuDaNrYzXk7cQcoPBzAuQrmQTgNgpo6XPqSBLCnfsjaV
+</code></pre>
+<p>The module named <strong>back.jpg</strong> is responsible for joining the Mozi network as well as pulling the Config file, and its basic information is shown as follows.</p>
+<blockquote>
+<p>Filename:back.jpg</p>
+<p>MD5:4ae078dd5085e97d3605f20dc079412a</p>
+<p>PE32 executable for MS Windows (DLL) (console) Intel 80386</p>
+<p>Packer: upx</p>
+</blockquote>
+<p>Some of the tags supported by Mozi_ftp Config can be clearly seen in the unpacked sample.</p>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_ftp.png"  width="860px" />
+Like Mozi_bot, Mozi_ftp also has an encrypted raw Config file embedded, which is decrypted by XOR as follows
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_ftpconf.png"  width="860px" />
+As with Mozi_bot, Mozi_ftp checks the signature of the Config with the following code snippet
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_verify.png"  width="860px" />
+<p>The XOR key used, and the two public_keys are as follows.</p>
+<pre><code> xor key:4E 66 5A 8F 80 C8 AC 23 8D AC 47 06 D5 4F 6F 7E
+------------------------------------------------------------------
+xored publickey A 
+	4C B3 8F 68 C1 26 70 EB 9D C1 68 4E D8 4B 7D 5F 
+	69 5F 9D CA 8D E2 7D 63 FF AD 96 8D 18 8B 79 1B 
+	38 31 9B 12 69 73 A9 2E B6 63 29 76 AC 2F 9E 94 A1	
+after decryption: 
+	02 d5 d5 e7 41 ee dc c8 10 6d 2f 48 0d 04 12 21 
+	27 39 c7 45 0d 2a d1 40 72 01 d1 8b cd c4 16 65 
+	76 57 c1 9d e9 bb 05 0d 3b cf 6e 70 79 60 f1 ea ef
+-------------------------------------------------------------------
+xored publickey B
+	4C A6 FB CC F8 9B 12 1F 49 64 4D 2F 3C 17 D0 B8 
+	E9 7D 24 24 F2 DD B1 47 E9 34 D2 C2 BF 07 AC 53 
+	22 5F D8 92 FE ED 5F A3 C9 5B 6A 16 BE 84 40 77 88
+after decryption:
+	02 c0 a1 43 78 53 be 3c c4 c8 0a 29 e9 58 bf c6 
+	a7 1b 7e ab 72 15 1d 64 64 98 95 c4 6a 48 c3 2d 
+	6c 39 82 1d 7e 25 f3 80 44 f7 2d 10 6b cb 2f 09 c6
+</code></pre>
+<p>Their values are the same as those used by Mozi_bot. According to the characteristics of the ECDSA384 elliptic algorithm, this means that <strong>Mozi_ftp and Mozi_bot use the same private key</strong>, and excluding the possibility of private key leakage, we can conclude that <strong>they are from the same author</strong>.</p>
+<p>In <code>back.jpg</code>, we can see that Mozi_ftp's Config supports the following basic tags.</p>
+<pre><code>[hp]
+[cpu]
+[cpux]
+[ss]
+[ssx]
+[nd]
+</code></pre>
+<p>In the script of <code>ftpcrack.py</code>, there is the following code snippet.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_ftp_py.png"  width="860px" /><br>
+This shows that Mozi_ftp also implements the following 4 special tags of its own.</p>
+<pre><code>[mdf]
+[mdr]
+[mud]
+[mrn]
+</code></pre>
+<h3 id="0x2sshnode">0x2: SSH node</h3>
+<p>Mozi uses the 51la, public service platform for its own statistics, In September 2020, we were able to tape into Mozi's backend statistics, on which we see not only the statistics of the Mozi_bot node, but also a set of unseen reporting entries as shown below.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_soso.PNG"  width="860px" /><br>
+On August 18, 2021, security vendor <strong>QiAnxin</strong> and <strong>Sangfor</strong> issued threat reports describing a mining Trojan named <strong>WorkMiner</strong> was spreading through weak SSH password, and it has P2P network behavior. We took a look and were surprised to find that this is exactly the SSH node in the Mozi botnet, and it has direct link to the aforementioned 51la urls. Here we will call it <code>Mozi_ssh</code>.</p>
+<p>The basic information of the sample we selected for analysis is shown below.</p>
+<blockquote>
+<p>Filename:work64<br>
+MD5:429258270068966813aa77efd5834a94<br>
+ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, stripped<br>
+Packer:upx</p>
+</blockquote>
+<p>In brief, Mozi_ssh is a mining trojan that spreads worm-like through SSH weak password, and became active around October 2020 (based on the sample's time on VT, which may not be accurate), with the wallet address shown below, which shows that Mozi_ssh and Mozi_ftp use the same wallet.</p>
+<pre><code>47BD6QNfkWf8ZMQSdqp2tY1AdG8ofsEPf4mcDp1YB4AX32hUjoLjuDaNrYzXk7cQcoPBzAuQrmQTgNgpo6XPqSBLCnfsjaV
+</code></pre>
+<p>Mozi_ssh is compiled from a mix of GO code and C code. The GO code is responsible for SSH-related propagation and the handling of Config, while the C code handles joining the Mozi P2P network and pulling Config.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_ssh.png"  width="860px" /><br>
+Mozi_ssh is implemented by the following code snippet calling the C code (dht_task) to add to the P2P network.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_sshgoc.png"  width="860px" /></p>
+<p>The function dht_task handles the same logic as Mozi_bot, and the embedded Config is decrypted as shown below.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_sshconf.png"  width="860px" /><br>
+Like Mozi_ftp, the XOR key used to decrypt the Config, and the two public_keys used to check the signature of the Config are the same as the ones used in Mozi_bot, which means that <strong>Mozi_ssh and Mozi_bot come from the same author</strong>.</p>
+<p>In the <code>dht_task</code> function, it can be seen that the Config of Mozi_ssh supports the following basic tags.</p>
+<pre><code>[hp]
+[ver]
+[cpu]
+[ss]
+[sv]
+[nd]
+</code></pre>
+<p>For the Config that passes the test, Mozi_ssh uses to process it through the function main_deal_conf, for example, the following code snippet is processing the swan tag. Compared to Mozi_bot, Mozi_ssh supports not only basic tags, but also implements many of its own special tags.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/mozi_sshdeal.png" alt="newmozi_confbot" loading="lazy"><br>
+The special tags supported by Mozi_ssh are shown below.</p>
+<pre><code>[slan]
+[swan]
+[spl]
+[sdf]
+[sud]
+[ssh]
+[srn]
+[sdr]
+[scount]
+</code></pre>
+<h3 id="0x3summary">0x3: Summary</h3>
+<p>The discovery of Mozi_ftp, Mozi_ssh gives us clear evidence that the Mozi botnet is also trying to profit from mining. From the samples of <code>bot, ftp, and ssh nodes</code>, we can see that their authors have used the &quot;DHT+Config&quot; model as a basic module, and by reusing this module and designing different special tag commands for different functional nodes, they can quickly develop the programs needed for new functional nodes, which is very convenient. This convenience is one of the reasons for the rapid expansion of the Mozi botnet.</p>
+<h1 id="whatarethechangesinmozibotv2s">What are the changes in Mozi bot v2s?</h1>
+<p>The Mozi botnet was mostly made of mozi_bot nodes. On January 07, 2020, we captured the bot sample with a version number v2s (1bd4f62fdad18b0c140dce9ad750f6de), and this version has been active since then and has attracted a lot of attention from the security community, and although many security vendors have analyzed it, we found that there are still missing parts.</p>
+<p>According to statistics, the samples of mozi v2s bot are mainly ARM and MIPS CPU architectures, and the samples of ARM architecture are selected below for analysis.</p>
+<blockquote>
+<p>MD5:b9e122860983d035a21f6984a92bfb22</p>
+<p>ELF 32-bit LSB executable, ARM, version 1 (ARM), statically linked, stripped</p>
+<p>Lib: uclibc</p>
+<p>Packer:UPX</p>
+</blockquote>
+<p>The v2s bot sample has many changes from the v2 sample we initially analyzed, the most intuitive of which is reflected in the tags supported by Config. v2s has added two new tags <strong>[cnc], [hj]</strong>, in addition to the new external network address acquisition, upnp port mapping and other features, the following section we will go over the changes brought by these features to Mozi_bot, note Microsoft published an article on the <code>[hj]</code> tag on August 19, 2021 <a href="https://www.microsoft.com/security/blog/2021/08/19/how-to-proactively-defend-against-mozi-iot-botnet/?ref=blog.netlab.360.com">here</a>.</p>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_compare.PNG"  width="860px" />
+<h3 id="0x1cnctag">0x1: [cnc] tag</h3>
+<p>The Mozi botnet's &quot;DHT+Config&quot; design has its convenience, but it also has a drawback that all Bot nodes have <code>inefficiency in synchronizing Config</code>, which indirectly leads to inefficiency in DDoS. To solve this problem, Mozi authors designed the tag [cnc], which corresponds to the new DDoS attack subtask.</p>
+<p>The whole subtask reuses the code of Mirai, specifying C2 by the [cnc] keyword, and the Bot node waits for the command sent by C2 to perform DDos attack after establishing communication with C2 through Mirai protocol. After adding this subtask, when Mozi wants to carry out an attack, it no longer needs to obtain the attack target by synchronizing Config one at a time, but only needs to synchronize Config once to get the specified C2, which greatly improves the attack efficiency of Bot nodes, and the corresponding network structure is shown as follows.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_network.jpg"  width="860px" /></p>
+<p>The following is the code snippet to obtain C2:PORT.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_mirai.PNG"  width="860px" /><br>
+The following is the code snippet for sending online packets.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_initmsg.PNG"  width="860px" /><br>
+The following is the code snippet for sending heartbeats.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_heartbeat.PNG"  width="860px" /><br>
+The following is the supported attack vector, there are 12 methods, the number 11 is written twice, so in reality Mozi's Bot node only supports 11 attack methods.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_ddos.PNG"  width="860px" /><br>
+If you are familiar with Mirai, you will smile when you see the following screenshot. Because of the extensive use of Mirai code, this batch of Mozi samples are marked as Mirai by a large number of antivirus producers.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_vt.PNG"  width="860px" /></p>
+<h3 id="0x2extranetaddressacquisition">0x2: Extranet address acquisition</h3>
+<p><code>http://ipinfo.io/ip</code> is called to get the internet address during the telnet &amp;exploit procdures.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_ip.PNG"  width="860px" /><br>
+After adding this feature there will be no more cases where intranet ip is being used to spread the payload.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_error.PNG"  width="860px" /></p>
+<h3 id="0x3upnpportmapping">0x3: upnp port mapping</h3>
+<p>When the infected device is accessing the network through NAT, the HTTP sample download service opened by Mozi_bot on the device through the listening port is not directly accessible by the external network. The new version of Mozi implements port mapping on the router through upnp's <code>AddPortMapping</code> to ensure normal access to the service.<br>
+<img src="https://blog.netlab.360.com/content/images/2021/08/newmozi_upnp.PNG"  width="860px" /></p>
+<h3 id="0x4summary">0x4: Summary</h3>
+<p>We can see that these updates to Mozi bot are all about efficiency: efficiency of DDoS attacks, efficiency of spreading infections. The abandonment of Gafgyt's attack code in favor of the more efficient Mirai. the separation of control nodes through [cnc] subtasking, refactoring DDoS attack functionality, and achieving separation of control nodes from bot nodes greatly increases Mozi's network resilience. This separation means that the botnet's control function is decoupled from the actual bot functions, allowing Mozi's authors to not only conduct DDos attacks themselves, but also make it possible to lease the network to other groups.</p>
+<h1 id="aremozibotsstillbeingupdated">Are Mozi bots still being updated?</h1>
+<p>The Mozi botnet samples have stopped updating for quite some time, but this does not mean that the threat posed by Mozi has ended. Since the parts of the network that are already spread across the Internet have the ability to continue to be infected, new devices are infected every day. Overall we expect it to oscillate downward in size on a weekly basis but might keep alive for a long time, just like several other botnets that have been terminated by law enforcement agencies in the past.</p>
+<!--kg-card-end: markdown-->
+    </section>
+
+
+</article>
+</main>
+
+
+
+
+            <aside class="read-more-wrap outer">
+                <div class="read-more inner">
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/911s5/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    僵尸网络911 S5的数字遗产
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+2024年5月29日，美国司法部发布通告，声称其执法活动摧毁了&quot;史上最大的僵尸网络&quot; 911 S5，查封了相关域名，并且逮捕了其管理员YunHe Wang。Wang及其同伙通过创建并分发包含恶意代码的免费VPN程序感染用户，并且在名为911 S5的住宅代理服务中出售对被感染设备构成的代理网络的访问权。
+
+按照360威胁情报中心的分析，911S5从2014年开始运营，到2022年7月关停，在2023年10月又摇身一变，化名CloudRouter继续其肮脏生意，终于在2024年5月被多国联合执法摧毁。911S5的僵尸网络运行时间长、涉及多个国家的19M个IP地址、行为高调，虽然经过执法行动后大势已去，但是其数字遗产仍然对网络空间构成了现实且显著的威胁，下文是我们对威胁分析的结果。
+
+
+“空手套白狼”的911 S5
+
+911S5出售的代理服务背后是数千万被感染的设备。受害者主动或被动下载捆绑了恶意代码的软件、免费VPN程序等。在程序启动后，恶意代码将会创建持久化服务作为后门，为911S5客户提供代理服务。
+
+在2023年以前，911S5使用的免费VPN包括:ProxyGate、Mas</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2024-06-14">14 Jun 2024</time>
+                <span class="post-card-meta-length">7 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/headsup_xdr33_variant_of_ciahive_emeerges/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    Heads up! Xdr33, A Variant Of CIA’s HIVE  Attack Kit Emerges
+                </h2>
+            </header>
+                <div class="post-card-excerpt">Overview
+
+
+On Oct 21, 2022, 360Netlab&#39;s honeypot system captured a suspicious ELF file ee07a74d12c0bb3594965b51d0e45b6f, which propagated via F5 vulnerability with zero VT detection, our system observces that it communicates with IP 45.9.150.144 using SSL with forged Kaspersky certificates, this caught our attention. After further lookup,</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-10">10 Jan 2023</time>
+                <span class="post-card-meta-length">13 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/warning-hive-variant-xdr33-is-coming_cn/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    警惕：魔改后的CIA攻击套件Hive进入黑灰产领域
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+
+2022年10月21日，360Netlab的蜜罐系统捕获了一个通过F5漏洞传播，VT 0检测的可疑ELF文件ee07a74d12c0bb3594965b51d0e45b6f，流量监控系统提示它和IP45.9.150.144产生了SSL流量，而且双方都使用了伪造的Kaspersky证书，这引起了我们的关注。经过分析，我们确认它由CIA被泄露的Hive项目server源码改编而来。这是我们首次捕获到在野的CIA HIVE攻击套件变种，基于其内嵌Bot端证书的CN=xdr33， 我们内部将其命名为xdr33。关于CIA的Hive项目，互联网中有大量的源码分析的文章，读者可自行参阅，此处不再展开。
+
+
+概括来说，xdr33是一个脱胎于CIA Hive项目的后门木马，主要目的是收集敏感信息，为后续的入侵提供立足点。从网络通信来看，xdr33使用XTEA或AES算法对原始流量进行加密，并采用开启了Client-Certificate Authentication模式的SSL对流量做进一步的保护；从功能来说，主要有beacon，trigger两大任务，其中beacon是周期性向硬编码的Be</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-09">09 Jan 2023</time>
+                <span class="post-card-meta-length">17 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                </div>
+            </aside>
+
+
+
+    </div>
+
+    <footer class="site-footer outer">
+        <div class="inner">
+            <section class="copyright"><a href="https://blog.netlab.360.com">360 Netlab Blog - Network Security Research Lab at 360</a> &copy; 2026</section>
+            <nav class="site-footer-nav">
+                <ul class="nav">
+    <li class="nav-sign-up"><a href="#/portal/">Sign up</a></li>
+</ul>
+
+            </nav>
+            <div class="gh-powered-by"><a href="https://ghost.org/" target="_blank" rel="noopener">Powered by Ghost</a></div>
+        </div>
+    </footer>
+
+</div>
+
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="pswp__bg"></div>
+
+    <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+    crossorigin="anonymous">
+</script>
+<script src="/assets/built/casper.js?v=00a3abdcf6"></script>
+<script>
+$(document).ready(function () {
+    // Mobile Menu Trigger
+    $('.gh-burger').click(function () {
+        $('body').toggleClass('gh-head-open');
+    });
+    // FitVids - Makes video embeds responsive
+    $(".gh-content").fitVids();
+});
+</script>
+
+
+
+</body>
+</html>

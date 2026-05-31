@@ -1,0 +1,15 @@
+{
+  "intelId": 29,
+  "sourceUrl": "https://blog.netlab.360.com/yi-jing-you-xxxge-jia-zu-de-botnetli-yong-log4shelllou-dong-chuan-bo-wei-da-bu-ding-de-gan-jin-liao/",
+  "fetchedAt": "2026-05-31T08:40:27Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "aaa6daff42e469be88a040ccc0c1e989441a5af9f7b47d84e9f63978782a6c4e",
+      "sizeBytes": 43599
+    }
+  ]
+}

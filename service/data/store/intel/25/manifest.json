@@ -1,0 +1,15 @@
+{
+  "intelId": 25,
+  "sourceUrl": "https://blog.netlab.360.com/b1txor20-use-of-dns-tunneling_en/",
+  "fetchedAt": "2026-05-31T08:40:27Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "79a51155dac0b97525a1b1dd1ee98947b85d27160bc3d3b3baa333717717bb81",
+      "sizeBytes": 39546
+    }
+  ]
+}

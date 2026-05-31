@@ -2,7 +2,8 @@
 import { onMounted, ref, watch } from 'vue'
 import { includesQuery, usePagedFilter } from '@/composables/usePagedFilter'
 import { useRouter } from 'vue-router'
-import { listIntel } from '@/api/intel'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listIntel, retryIntel } from '@/api/intel'
 import AppLayout from '@/components/AppLayout.vue'
 import FilterCard from '@/components/FilterCard.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -23,6 +24,7 @@ const items = ref<IntelSummary[]>([])
 const filterSource = ref('')
 const filterStatus = ref<IngestStatus | ''>('')
 const searchQ = ref('')
+const retryingId = ref<number | null>(null)
 
 const listPager = usePagedFilter(() => items.value, {
   pageSize: 10,
@@ -30,6 +32,7 @@ const listPager = usePagedFilter(() => items.value, {
     includesQuery(
       q,
       row.title,
+      row.sourceUrl,
       row.sourceName,
       row.collectSourceName,
       String(row.id),
@@ -68,6 +71,11 @@ function formatConfidence(v: number | null) {
   return `${Math.round(v * 100)}%`
 }
 
+function displayTitle(title: string): string {
+  const t = title?.trim()
+  return t || '（无标题）'
+}
+
 function ingestStatusLabel(status: IngestStatus): string {
   return INGEST_STATUS_LABELS[status]
 }
@@ -76,8 +84,39 @@ function knowledgeActionLabel(action: KnowledgeLinkAction): string {
   return KNOWLEDGE_ACTION_LABELS[action]
 }
 
-function goDetail(id: number) {
-  router.push({ name: 'intel-detail', params: { id: String(id) } })
+function goDetail(row: IntelSummary) {
+  if (!row?.id) return
+  void router.push({ name: 'intel-detail', params: { id: String(row.id) } })
+}
+
+function onRowClick(row: IntelSummary) {
+  goDetail(row)
+}
+
+function canRetryRow(row: IntelSummary) {
+  return row.ingestStatus !== 'parsing' && row.ingestStatus !== 'extracting'
+}
+
+async function confirmRetryRow(row: IntelSummary) {
+  try {
+    await ElMessageBox.confirm(
+      `重试情报 #${row.id} 的流水线？将重新解析与抽取，不重复拉取原文。`,
+      '重试确认',
+      { type: 'warning', confirmButtonText: '重试', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  retryingId.value = row.id
+  try {
+    await retryIntel(row.id)
+    ElMessage.success('已重新入队')
+    await load()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '重试失败')
+  } finally {
+    retryingId.value = null
+  }
 }
 
 function goKnowledge(id: number) {
@@ -108,7 +147,7 @@ onMounted(search)
       <FilterCard>
         <el-form :inline="true" @submit.prevent="search">
           <el-form-item label="关键词">
-            <el-input v-model="searchQ" clearable placeholder="标题 / 来源 / ID" style="width: 200px" />
+            <el-input v-model="searchQ" clearable placeholder="标题 / 采集路径 / ID" style="width: 220px" />
           </el-form-item>
           <el-form-item label="来源">
             <el-select v-model="filterSource" clearable placeholder="全部" style="width: 120px">
@@ -127,14 +166,44 @@ onMounted(search)
       </FilterCard>
 
       <el-card shadow="never" v-loading="loading" class="table-card">
-        <el-table v-if="listPager.total.value > 0" :data="listPager.pageData.value" stripe size="small">
-          <el-table-column prop="id" label="ID" width="72" />
-          <el-table-column label="标题" min-width="260">
+        <el-table
+          v-if="listPager.total.value > 0"
+          :data="listPager.pageData.value"
+          stripe
+          size="small"
+          class="intel-table"
+          @row-click="onRowClick"
+        >
+          <el-table-column prop="id" label="ID" width="72">
             <template #default="{ row }">
-              <el-link type="primary" class="title-link" @click="goDetail(row.id)">{{ row.title }}</el-link>
+              <span class="id-link">#{{ row.id }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="collectSourceName" label="采集源" width="130" show-overflow-tooltip />
+          <el-table-column label="标题" min-width="220" class-name="ami-table-title-cell">
+            <template #default="{ row }">
+              <span
+                class="title-link ami-title-wrap"
+                :class="{ 'is-untitled': !row.title?.trim() }"
+              >
+                {{ displayTitle(row.title) }}
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column label="采集路径" min-width="280">
+            <template #default="{ row }">
+              <a
+                v-if="row.sourceUrl"
+                :href="row.sourceUrl"
+                class="source-url"
+                target="_blank"
+                rel="noopener noreferrer"
+                @click.stop
+              >
+                {{ row.sourceUrl }}
+              </a>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
           <el-table-column label="采集时间" width="140">
             <template #default="{ row }">{{ formatCollected(row.collectedAt) }}</template>
           </el-table-column>
@@ -152,13 +221,13 @@ onMounted(search)
           </el-table-column>
           <el-table-column label="关联知识" width="100">
             <template #default="{ row }">
-              <template v-if="row.knowledgeIds.length">
+              <template v-if="row.knowledgeIds?.length">
                 <el-link
                   v-for="kid in row.knowledgeIds"
                   :key="kid"
                   type="primary"
                   class="kid-link"
-                  @click="goKnowledge(kid)"
+                  @click.stop="goKnowledge(kid)"
                 >
                   #{{ kid }}
                 </el-link>
@@ -168,6 +237,21 @@ onMounted(search)
           </el-table-column>
           <el-table-column label="抽取置信" width="88" align="center">
             <template #default="{ row }">{{ formatConfidence(row.extractConfidence) }}</template>
+          </el-table-column>
+          <el-table-column label="操作" width="88" fixed="right" align="center">
+            <template #default="{ row }">
+              <el-button
+                v-if="canRetryRow(row)"
+                size="small"
+                type="warning"
+                plain
+                :loading="retryingId === row.id"
+                @click.stop="confirmRetryRow(row)"
+              >
+                重试
+              </el-button>
+              <span v-else class="muted">—</span>
+            </template>
           </el-table-column>
         </el-table>
         <el-empty v-else description="无匹配任务" :image-size="80" />
@@ -193,8 +277,32 @@ onMounted(search)
 .table-card {
   background: var(--ami-surface) !important;
 }
+.intel-table :deep(.el-table__row) {
+  cursor: pointer;
+}
+.intel-table :deep(.el-table__row:hover .title-link) {
+  color: var(--el-color-primary);
+}
 .title-link {
+  display: block;
   font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+.id-link {
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+.title-link.is-untitled {
+  color: var(--el-text-color-secondary);
+  font-style: italic;
+}
+.source-url {
+  color: var(--el-color-primary);
+  font-size: 12px;
+  text-decoration: none;
+}
+.source-url:hover {
+  text-decoration: underline;
 }
 .kid-link {
   margin-right: 6px;

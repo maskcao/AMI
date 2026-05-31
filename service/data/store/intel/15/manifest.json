@@ -1,0 +1,15 @@
+{
+  "intelId": 15,
+  "sourceUrl": "https://blog.netlab.360.com/warning-hive-variant-xdr33-is-coming_cn/",
+  "fetchedAt": "2026-05-31T08:40:26Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "47e95c6f02792ff698bcca6489fef7073b30bb1a7d25480346357b6164c61513",
+      "sizeBytes": 51074
+    }
+  ]
+}

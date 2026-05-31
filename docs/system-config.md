@@ -10,9 +10,9 @@
 | 项 | 说明 |
 |----|------|
 | **消费者** | `service` 中 ingest worker、cron 调度器、可选 enrich worker |
-| **产出物** | 写入 **情报工作台**（`IntelReport`，`ingest_status` 流转），**不直接**写攻击知识库 |
+| **产出物** | 写入 **采集队列**（`IntelReport`，`ingest_status` 流转），流水线完成后自动写攻击知识库 |
 | **不做** | 多租户配置隔离、连接器市场、OpenCTI 式 STIX 流式总线 |
-| **与情报工作台** | 采集配置定义「从哪来、多久采一次」；工作台定义「采回来怎么审、挂哪条知识」 |
+| **与采集队列** | 采集配置定义「从哪来、多久采一次」；队列页观测处理状态与自动关联知识 |
 
 ```mermaid
 flowchart LR
@@ -79,7 +79,10 @@ flowchart LR
 
 | 类型 | 代码 | 场景说明 | 典型配置项 | 阶段 |
 |------|------|----------|------------|------|
-| **定时 URL 监测** | `scheduled_url` | 固定 URL 列表/门户页，按 cron 拉取 **最新** 内容（列表页 diff 或详情直链） | `urls[]`、`list_selector`、`link_selector`、`max_items_per_run`、HTTP 头、超时 | **P1**（已提供） |
+| **单 URL 直采** | `direct_url` | 已知详情页 URL，立即或定时 GET | `article_urls[]`、`timeout_sec` | **P1**（已提供） |
+| **列表路径分页** | `paginated_list` | 列表入口 + `/page/N/` 等路径翻页，抽链后爬正文 | `list_url`、`pagination`、`link_extract`、`max_items_per_run` | **P1**（已提供） |
+| **威胁门户抽链** | `threat_portal` | 门户/标签列表抽文章 URL（逻辑同 `paginated_list`；`scroll` 分页待 Playwright） | 同上 | **P1**（已提供） |
+| **定时 URL 监测** | `scheduled_url` | 兼容旧配置；行为同列表监测 | `list_url`、`link_selector` 等 | **P1**（兼容） |
 | **微信链接采集** | `wechat_feed` | 从 **公众号聚合页/历史消息页** 提取文章链接，再逐条爬取正文 | `entry_url`、`link_extract_rule`（CSS/XPath/正则）、`article_parser_profile`、`cookie_ref`（密钥引用）、限速 | **P1**（已提供） |
 | **RSS / Atom** | `rss` | 安全博客、厂商公告订阅 | `feed_url`、`etag_support` | **P1** |
 | **手工上传入口** | `manual_upload` | 分析师 PDF/HTML/EML 上传（配置侧仅开关与大小限制） | `max_file_mb`、`allowed_mime[]` | **P1** |
@@ -198,7 +201,7 @@ flowchart TB
 |------|------|
 | `CollectJob` | 一次调度运行记录（开始/结束、抓取数、失败数） |
 | `CollectJobItem` | 单 URL/单条 feed entry 的处理结果 |
-| 队列 | 单进程 worker + DB 队列即可（轻量）；cron 只负责 **触发**，不阻塞 HTTP API |
+| 队列 | 单进程 Go Worker + SQLite `pipeline_jobs`（轻量）；cron 只负责 **触发**，不阻塞 HTTP API |
 | 并发 | 每源 `max_concurrency` 默认 1；微信爬取建议串行+延时 |
 
 ### 3.5 采集配置 UI（字段级）
@@ -225,7 +228,7 @@ flowchart TB
 |------|------|
 | `ModelProvider` | LLM/Embedding 服务商：OpenAI 兼容、本地 Ollama、企业网关 |
 | `ParserProfile` | 正文抽取规则：通用 HTML、微信排版、PDF 文本层 |
-| `EnrichProfile` | 富化任务：IOC 抽取、TTP 候选、摘要（**输出进待审，不自动发布知识**） |
+| `EnrichProfile` | 富化任务：IOC 抽取、TTP 候选、摘要 → **驱动自动写/更新攻击知识** |
 
 ### 4.2 `ModelProvider` 字段（摘要）
 
@@ -249,6 +252,9 @@ flowchart TB
 | `title_selector` | 标题 |
 | `date_selector` | 披露时间 |
 | `post_process` | 可选 LLM 清洗（引用 `ModelProvider`） |
+| `output_layout` | 固定 `parsed/v1/` 下 `body.md`、`body.txt`、`chunks.jsonl`（见 [storage-and-artifacts.md](./storage-and-artifacts.md)） |
+
+Parse 完成后 Worker **回写** `intel_report.summary_snippet`、`has_parsed`，供列表 API **不读文件**。
 
 ### 4.4 `EnrichProfile` 字段（摘要）
 
@@ -256,10 +262,19 @@ flowchart TB
 |------|------|
 | `ioc_extract` | 是否启用规则/模型 IOC 抽取 |
 | `ttp_suggest` | 是否推荐 MITRE（需矩阵上下文） |
-| `summary_llm` | 是否生成摘要 |
-| `confidence_threshold` | 自动写入草稿的最低置信（仍须人工发布） |
+| `summary_llm` | 是否生成摘要（可关以省 Token） |
+| `confidence_threshold` | 低于阈值时仅写情报层 IOC/候选，不自动改知识 |
+| `max_input_chars` | 送入 LLM 的正文上限（字符） |
+| `max_tokens_classify` | 分类阶段 Token 上限 |
+| `max_tokens_extract` | 结构化抽取 Token 上限 |
+| `chunk_size` | `chunks.jsonl` 分块大小（字符） |
+| `chunk_overlap` | 分块重叠 |
+| `classify_enabled` | 是否先分类再抽取 |
+| `use_llm_cache` | 是否启用 `llm_response_cache` |
 
-**边界：** 模型配置 **不** 自动创建 `AttackKnowledge`；只加速情报工作台审核。
+**Token 原则：** 规则/HTML 清洗优先；MITRE/CVE 上下文从 SQLite 字典注入，不塞整份矩阵。详见 [design.md](./design.md) §12.2。
+
+**边界：** `EnrichProfile` 输出经流水线 **自动** 创建/更新 `AttackKnowledge`；采集队列无人工审情报环节。
 
 ### 4.5 模型配置 UI
 
@@ -272,9 +287,9 @@ Tab：**模型服务** | **解析模板** | **富化策略**
 
 | 模块 | 关系 |
 |------|------|
-| 情报工作台 | 采集产物 `ingest_status = draft/parsing/pending_review` |
-| 攻击知识库 | 人工审核后挂载；模型仅推荐 |
-| 威胁情报库维度页 | 无直接配置；统计来自已发布知识 |
+| 采集队列 | `queued` → `parsing` → `extracting` → `succeeded` / `failed` |
+| 攻击知识库 | 流水线自动写入/更新；人工可选合并纠错 |
+| 威胁情报库维度页 | 无直接配置；统计来自已发布攻击知识 |
 | 运营总览 | 可展示「采集源数」「近 24h 采集量」（读 `CollectJob` 聚合） |
 
 ---
@@ -317,4 +332,4 @@ Tab：**模型服务** | **解析模板** | **富化策略**
 
 1. 微信入口是否仅支持 **固定历史页 URL**，还是需要对接官方/第三方 API？  
 2. 采集失败告警：站内通知 / 邮件 / 仅日志？  
-3. 同一 `source_url` 重复采集：覆盖草稿还是跳过？（建议：**已发布跳过，草稿可覆盖**）
+3. 同一 `source_url` 重复采集：跳过还是重跑流水线？（建议：**succeeded 跳过，failed/queued 可重试**）

@@ -46,6 +46,25 @@ body {
   height: 100%;
 }
 
+/* List/detail titles: wrap long text and honor \n in stored titles */
+.ami-title-wrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.el-table td.ami-table-title-cell {
+  vertical-align: top;
+}
+
+.el-table td.ami-table-title-cell .cell {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
 /* Shell: sidebar + scrollable main */
 .ami-app-layout {
   width: 100%;

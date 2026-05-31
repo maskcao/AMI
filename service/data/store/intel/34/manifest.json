@@ -1,0 +1,15 @@
+{
+  "intelId": 34,
+  "sourceUrl": "https://blog.netlab.360.com/the-pitfall-of-threat-intelligence-whitelisting-specter-botnet-is-taking-over-top-legit-dns-domains-by-using-cloudns-service/",
+  "fetchedAt": "2026-05-31T08:40:27Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "5cc4176774597546c5a742f76b8e50803bc8258a78bd3dd40eef32f81a3b16ce",
+      "sizeBytes": 30633
+    }
+  ]
+}

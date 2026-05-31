@@ -184,7 +184,7 @@ onMounted(load)
               </el-button>
             </div>
           </div>
-          <h1 class="detail-title">{{ detail.title }}</h1>
+          <h1 class="detail-title ami-title-wrap">{{ detail.title }}</h1>
           <p class="detail-meta">
             知识 ID {{ detail.id }}
             ·

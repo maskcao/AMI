@@ -1,0 +1,15 @@
+{
+  "intelId": 38,
+  "sourceUrl": "https://ghost.org/",
+  "fetchedAt": "2026-05-31T08:40:28Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "7e03b2454bbfd2c27dffd718e64cbca34210b9589f09c512b50d8cf3274d107f",
+      "sizeBytes": 121270
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AttackTechnique, IntelFigure } from '@/types/intel'
+import { attackMatrixLabel, tacticLabel, techniqueLabel } from '@/constants/mitre-zh'
 import { figuresForTechnique } from '@/utils/intel-figures'
 
 const props = defineProps<{
@@ -27,9 +28,9 @@ const figuresByTechnique = computed(() => {
   <div v-else class="technique-list">
     <article v-for="row in techniques" :key="row.techniqueId" class="technique-block">
       <header class="technique-head">
-        <el-tag size="small" type="info">{{ row.tactic }}</el-tag>
+        <el-tag size="small" type="info">{{ tacticLabel(row.tactic) }}</el-tag>
         <span class="technique-id">{{ row.techniqueId }}</span>
-        <span class="technique-name">{{ row.name }}</span>
+        <span class="technique-name">{{ techniqueLabel(row.techniqueId, row.name) }}</span>
       </header>
       <p v-if="row.description" class="technique-desc">{{ row.description }}</p>
       <div v-if="figuresByTechnique.get(row.techniqueId)?.length" class="technique-figures">
@@ -51,7 +52,7 @@ const figuresByTechnique = computed(() => {
       </div>
     </article>
   </div>
-  <p v-if="techniques.length" class="matrix-hint">当前矩阵：{{ matrix }} ATT&CK</p>
+  <p v-if="techniques.length" class="matrix-hint">当前矩阵：{{ attackMatrixLabel(matrix) }}</p>
 </template>
 
 <style scoped>

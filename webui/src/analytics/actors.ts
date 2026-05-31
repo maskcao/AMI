@@ -6,6 +6,7 @@ export interface LinkedKnowledgeRef {
 function knowledgeRef(kid: number, title: string): LinkedKnowledgeRef {
   return { knowledgeId: kid, knowledgeTitle: title }
 }
+import { getAnalyticsBundle } from '@/api/analytics'
 import { getThreatActorMeta } from '@/mock/threat-actors'
 import { KNOWLEDGE_DETAILS } from '@/mock/knowledge'
 import type { ThreatActorListItem, ThreatActorProfile } from '@/types/threat-actor'
@@ -148,6 +149,10 @@ export function buildThreatActorProfile(actorName: string): ThreatActorProfile |
 }
 
 export function getThreatActorProfileBySlug(slug: string): ThreatActorProfile | null {
+  const b = getAnalyticsBundle()
+  if (b?.actorProfiles?.[slug]) {
+    return b.actorProfiles[slug] as ThreatActorProfile
+  }
   try {
     return buildThreatActorProfile(slugToActorName(slug))
   } catch {

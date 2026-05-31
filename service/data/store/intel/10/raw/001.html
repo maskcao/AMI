@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>PassiveDNS - 360 Netlab Blog - Network Security Research Lab at 360</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <link rel="preload" as="style" href="/assets/built/screen.css?v=00a3abdcf6" />
+    <link rel="preload" as="script" href="/assets/built/casper.js?v=00a3abdcf6" />
+
+    <link rel="stylesheet" type="text/css" href="/assets/built/screen.css?v=00a3abdcf6" />
+
+    <link rel="icon" href="https://blog.netlab.360.com/content/images/size/w256h256/2019/02/netlab_xs-2.png" type="image/png">
+    <link rel="canonical" href="https://blog.netlab.360.com/tag/pdns/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <link rel="next" href="https://blog.netlab.360.com/tag/pdns/page/2/">
+    
+    <meta property="og:site_name" content="360 Netlab Blog - Network Security Research Lab at 360">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="PassiveDNS - 360 Netlab Blog - Network Security Research Lab at 360">
+    <meta property="og:url" content="https://blog.netlab.360.com/tag/pdns/">
+    <meta property="og:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PassiveDNS - 360 Netlab Blog - Network Security Research Lab at 360">
+    <meta name="twitter:url" content="https://blog.netlab.360.com/tag/pdns/">
+    <meta name="twitter:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta name="twitter:site" content="@360Netlab">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="800">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Series",
+    "publisher": {
+        "@type": "Organization",
+        "name": "360 Netlab Blog - Network Security Research Lab at 360",
+        "url": "https://blog.netlab.360.com/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png"
+        }
+    },
+    "url": "https://blog.netlab.360.com/tag/pdns/",
+    "name": "PassiveDNS",
+    "mainEntityOfPage": "https://blog.netlab.360.com/tag/pdns/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 6.37">
+    <link rel="alternate" type="application/rss+xml" title="360 Netlab Blog - Network Security Research Lab at 360" href="https://blog.netlab.360.com/rss/">
+    
+    <script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/sodo-search.min.js" data-key="1fd4df542dc24426ca7c59275e" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/main.css" data-sodo-search="https://blog.netlab.360.com/" data-locale="en" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.netlab.360.com/webmentions/receive/" rel="webmention">
+    <script defer src="/public/cards.min.js?v=00a3abdcf6"></script><style>:root {--ghost-accent-color: #eca265;}</style>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=00a3abdcf6">
+    <style type='text/css'>
+	#ghost-portal-root {
+        display: none;
+    }
+</style>
+
+</head>
+<body class="tag-template tag-pdns is-head-left-logo has-sans-body has-cover">
+<div class="viewport">
+
+    <header id="gh-head" class="gh-head outer">
+        <div class="gh-head-inner inner">
+            <div class="gh-head-brand">
+                <a class="gh-head-logo" href="https://blog.netlab.360.com">
+                        <img src="https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png" alt="360 Netlab Blog - Network Security Research Lab at 360">
+                </a>
+                <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <button class="gh-burger" aria-label="Main Menu"></button>
+            </div>
+
+            <nav class="gh-head-menu">
+                <ul class="nav">
+    <li class="nav-botnet"><a href="https://blog.netlab.360.com/tag/botnet/">Botnet</a></li>
+    <li class="nav-dnsmon"><a href="https://blog.netlab.360.com/tag/dnsmon/">DNSMon</a></li>
+    <li class="nav-ddos"><a href="https://blog.netlab.360.com/tag/ddos/">DDoS</a></li>
+    <li class="nav-passivedns nav-current"><a href="https://blog.netlab.360.com/tag/pdns/">PassiveDNS</a></li>
+    <li class="nav-mirai"><a href="https://blog.netlab.360.com/tag/mirai/">Mirai</a></li>
+    <li class="nav-dta"><a href="https://blog.netlab.360.com/tag/dta/">DTA</a></li>
+</ul>
+
+            </nav>
+
+            <div class="gh-head-actions">
+                        <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="site-content">
+        
+<main id="site-main" class="site-main outer">
+<div class="inner posts">
+    <div class="post-feed">
+
+        <section class="post-card post-card-large">
+
+
+            <div class="post-card-content">
+            <div class="post-card-content-link">
+                <header class="post-card-header">
+                    <h2 class="post-card-title">PassiveDNS</h2>
+                </header>
+                <div class="post-card-excerpt">
+                        A collection of 28 posts
+                </div>
+            </div>
+            </div>
+
+        </section>
+
+            
+<article class="post-card post tag-dnsmon tag-certdb tag-pdns tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/review-revoke-russia-ssl-certificates/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    俄乌危机中的数字证书：吊销、影响、缓解
+                </h2>
+            </header>
+                <div class="post-card-excerpt">背景
+
+
+当前这场始于2021的俄乌危机已经注定载入史册，不仅因为危机中的冲突会对传统政治地缘产生深远影响，也因为这些冲突历史性的全面蔓延到网络空间。我们（360Netlab）从独立采集到的数据出发，观察分析并呈现冲突中各利益相关方采取的行动和反制行动，希望有利于安全社区思考自身在网络空间中的定位、态度和行动。
+
+
+本文中的观察分析基于网络资产的SSL证书数据库CertDB，它是360Netlab 运营的网络空间基础数据之一，它采集了几乎全部活跃的网络空间中的网站证书。证书是整个现代webPKI系统的最核心的部分之一。如果说DNS数据标识了网络资产的地址，那么证书就是网络资产的身份证。丢失或者没有证书数据，就没有办法证明“我”就是“我”。因此作为互联网安全运营的基础数据，重要性不言而喻。
+
+
+
+
+
+360Netlab同时运营着的网络空间基础数据库包括描述域名注册的WhoisDB、域名解析的PassiveDNS、网站页面的WebDB等等。这些基础数据库的条目以十亿或千亿为单位计，共同构成了用以描述全球网络空间变迁的DNSMon系统。
+
+在CertDB的支持下，我们有足够坚实的数据基础来解</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2022-04-02">02 Apr 2022</time>
+                <span class="post-card-meta-length">28 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dnsmon tag-pdns tag-certdb tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/shu-zi-zheng-shu-zuo-wei-ji-chu-she-shi-de-shi-yong-qing-kuang-fen-xi/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    商业数字证书签发和使用情况简介(删减版)
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概要
+
+数字证书是整个现代webPKI系统的最核心的部分之一。如果说DNS数据标识了网络资产的地址，那么数字证书就是网络资产的身份证。没有,丢失或者被吊销数字证书，就没有办法证明“我”就是“我”。因此PKI系统及其数据已经成为网络真正的基础设施，作为互联网安全运营的基础数据，重要性不言而喻。
+
+
+
+
+3月初,乌克兰政府向互联网域名管理结构ICANN书面请求将俄罗斯相关顶级域名“.ru”, “.рф” 和“.su”从互联网撤销[1]，但ICANN并没有认同这份请求[2]。近日，我们注意到俄罗斯相关的一些国家基础设施网站的证书被证书机构陆续吊销。
+
+
+
+360Netlab成立之后不久就通过主动、被动相结合的方式收集网络数字证书，并以此为基础构建了网络证书数据库CertDB。目前该库包含证书规模和涉及的IP端口数据达到十亿级，历史数据可追溯超过5年，是360Netlab基础数据分析系统DNSMon的重要组成部分。此外360Netlab同时运营着的网络空间基础数据库包括描述域名注册的WhoisDB、域名解析的PassiveDNS、网站页面的WebDB等等。这些基础数据库的条目以十亿或千亿为单位</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2022-03-23">23 Mar 2022</time>
+                <span class="post-card-meta-length">14 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-en tag-dnsmon tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/an-assessment-of-non-authorized-domain-name-resolution-provided-by-dns-resolution-service-provider/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    An assessment of Non-Authorized Domain Name Resolution provided by DNS Resolution Service Provider
+                </h2>
+            </header>
+                <div class="post-card-excerpt">Summary
+
+
+In a previous article, we disclosed that the Specter botnet uses api. github[.]com and other white domains to provide C2 services as a way to evade detection by security products based on signature and threat intelligence matching. The botnet can do this because the Domain Name Resolution provider</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2021-12-08">08 Dec 2021</time>
+                <span class="post-card-meta-length">8 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-dnsmon tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/analysis-of-popular-domain-names-by-non-authorized-resolvers/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    解析服务提供商对非授权域名解析情况的评估
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概要
+
+
+在之前的文章中，我们披露了Specter僵尸网络序利用api[.]github.com等白域名提供C2服务，以此来逃避基于签名和威胁情报匹配的安全产品的检测。其具体原理经过分析之后，发现其利用了某些域名注册/托管商(cloudns)的权威DNS服务器在解析非其客户域名方面的漏洞。
+
+我们对此现象，即域名注册/托管商，公有云提供商等能够提供域名注册和解析服务的供应商（以下统称为解析服务提供商）对非自己服务域名的DNS请求是否能够返回正确应答的情况，进行了系统的测量和评估。
+
+
+这篇文章对此现象进行了分析。
+
+
+
+数据选择及评估方法
+
+
+
+被测域名
+
+
+被测试域名：Alexa top500。选择他们作为被测域是因为：
+
+
+ 1. 这些域名都会使用自己专有的DNS服务器，他们并不会使用外部的解析服务提供商提供的解析服务。所以如果这些域名可以被外部的解析服务提供商的NS服务器解析，那么大概率是非授权的。
+ 2. 这些域名本身也因为其庞大而知名的业务，会被加入到各种白名单中。一些出于探测目的的人也更容易随手添加一些知名网站，而干坏事的人微了躲避检测黑名单检测，也愿意使用这些白域名。</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2021-12-06">06 Dec 2021</time>
+                <span class="post-card-meta-length">16 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-whoisdb tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 keep-ratio">
+
+    <a class="post-card-image-link" href="/analysis-of-seized-iran-domains/">
+
+        <img class="post-card-image"
+            srcset="/content/images/size/w300/2021/06/alalamtvnet.jpeg 300w,
+                    /content/images/size/w600/2021/06/alalamtvnet.jpeg 600w,
+                    /content/images/size/w1000/2021/06/alalamtvnet.jpeg 1000w,
+                    /content/images/size/w2000/2021/06/alalamtvnet.jpeg 2000w"
+            sizes="(max-width: 1000px) 400px, 800px"
+            src="/content/images/size/w600/2021/06/alalamtvnet.jpeg"
+            alt="被拦截的伊朗域名的快速分析"
+            loading="lazy"
+        />
+
+
+    </a>
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/analysis-of-seized-iran-domains/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    被拦截的伊朗域名的快速分析
+                </h2>
+            </header>
+                <div class="post-card-excerpt">伊朗新闻网站被美国阻断的事成为了最近的新闻热点，报道的主要内容是：
+
+
+
+
+
+美国司法部查封36个伊朗的新闻网站，其中许多网站与伊朗的“虚假信息活动”有关。这些网站首页通知显示，根据美国法律，这些网站已被美国政府查封，通知上还附有美国联邦调查局和美国商务部产业安全局的印徽。
+
+
+
+到底哪些新闻站被拦截了，我们查询了几个新闻源都没有给出全部被拦截的网站列表。
+
+其实这种从域名角度做拦截的手段，总是会在大网的DNS/whois数据中留下踪迹。我们利用这些网络基础数据分析出了32+2个被拦截的伊朗新闻网站的域名，其中的2个域名是在今年3月和4月份被拦截的；通过技术分析，也确认这些修改是直接通过注册局进行的改动。被拦截的域名的详细列表见文末。
+
+
+
+分析
+
+
+我们拿其中被拦截的域名之一alalamtv.net 来做一个分析(见相关新闻报道)。
+
+
+
+DNS记录
+
+
+从该域名出发，我们利用PassivedDNS记录可以看到，其NS服务器和IP地址在6月23号的凌晨3点40开始发生了变化，无论NS服务器还是IP地址都切换到了亚马逊的服务器。
+
+
+
+
+whois记录
+
+
+先说结论：通过对不同域名的w</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2021-06-25">25 Jun 2021</time>
+                <span class="post-card-meta-length">10 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dnsmon tag-pdns tag-miner tag-ioc tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/use-dns-data-produce-threat-intelligence/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    DNSMon: 用DNS数据进行威胁发现
+                </h2>
+            </header>
+                <div class="post-card-excerpt">----发现skidmap的未知后门
+
+
+更新记录
+
+
+ * 
+   
+   
+   [2020-12-07]
+   
+   在本文发布之后不久，我们注意到该后门的访问模式有了一定的调整。并在最近DNSMon发现攻击者已经启用了新的域名IOC。具体来说有如下变化：
+   
+   
+   1. 将rctl子域名变更为 r1
+   2. 新启用了mylittlewhitebirds[.]com，howoldareyou9999[.]com（比原先的howoldareyou999[.]com多了一个字符&#39;9&#39;），franceeiffeltowerss[.]com(比原先的franceeiffeltowers[.]com多了一个字符&#39;s&#39;)三个域名作为后面的备用域名。
+   
+   
+   具体如下：
+   
+   
+   r1.googleblockchaintechnology[.]com
+   r1.howoldareyou9999[.]com
+   r1-443.howoldareyou9999[.]com
+   r1-443.franceeiffeltowerss[.]com</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2020-11-25">25 Nov 2020</time>
+                <span class="post-card-meta-length">19 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dnsmon tag-pdns tag-ioc tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/360netlab-launch-ioc-assessmement-service/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    360netlab上线域名IOC（威胁情报）评估标准及评估数据服务
+                </h2>
+            </header>
+                <div class="post-card-excerpt">版本一：程序员版
+
+
+一直以来，由于高门槛，安全圈里对威胁情报质量没有一个很好的评估手段，
+
+
+
+
+
+PR狠的公司的威胁情报就更好么？
+
+名头响的公司的威胁情报就更好么？
+
+使用了机器学习人工智能这些热词的威胁情报就更好么？
+
+拿了一堆排排坐吃果果的奖的公司的威胁情报就更好么？
+
+
+
+难有人能给个说法，所以最后我们看到用户只能回到一个聊胜于无的方法，哪家的威胁情报的总数多哪家就好，出现的告警次数多哪家就好！
+
+这个方法其实巨坑，举个?：
+
+
+
+
+
+A和B厂家提供两份威胁情报，A有10万条IOC，B有5万条IOC。
+
+A的10万条IOC在实际网络中总命中IOC不到1000条，产生了20000次告警。
+
+B的5万条IOC在实际网络中命中IOC15000条，也产生了20000次告警。
+
+
+你愿意选择哪个？
+
+
+
+那咋办？
+
+经过一段时间的准备，我们推出来了个一个公益的评估标准，而且还免费提供大网的实际评估数据从而让客户有真实数据评估。
+
+
+我们这么干是为啥？ 是不是有啥阳谋，要怎么收数据之类的？（答案，没有，看看我们的正经页面就能懂）
+
+
+另外我们很欢迎有经验的用户提供反馈修正等，对于采用的</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2020-11-02">02 Nov 2020</time>
+                <span class="post-card-meta-length">4 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dnsmon tag-pdns tag-ntp-2 tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/look-at-ntp-pool-using-dns-data_en/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    Look at NTP pool using DNS data
+                </h2>
+            </header>
+                <div class="post-card-excerpt">With the rapid development of the Internet, more and more people have realized the importance of network infrastructure.  We don’t hear people talk about NTP ( Network Time Protocol) much though.
+
+Whether NTP can work well will affect the operation of most time-based computer system. For example, IPSEC tunnel establishment,</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2020-05-26">26 May 2020</time>
+                <span class="post-card-meta-length">8 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dnsmon tag-pdns tag-ntp tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/look-at-ntp-pool-using-dns-data/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    从DNS角度看NTP pool服务器的使用
+                </h2>
+            </header>
+                <div class="post-card-excerpt">随着互联网的快速发展，其已经深入到日常生活中的方方面面，越来越多的业内人员对于网络基础设施的重要性有了非常深入的认识。不过谈到基础设施，通常都会谈及DNS协议，但是还有一个关键的协议NTP（Network Time Protocol）却没有得到应有的重视。
+
+NTP是否能够良好的工作会影响到计算机系统的大部分基于时间判定的逻辑的正确运行。比如DNSSEC是否过期，IPSEC的隧道建立，TLS证书的有效性校验，个人密码的过期，crontab任务的执行等等[1]。
+
+NTP协议同DNS类似，是互联网最古老的协议之一，主要作用如其名字所说，用来保持设备时间的同步。在我们使用的操作系统比如windows，Android或者Macos都配置有自己的NTP时间服务器来定期同步设备上的时间。
+
+
+NTP pool 是什么？
+
+由于互联网的发展以及NTP业务的特殊性（时间需要定期同步），少量的NTP服务器的负载越来越大，并且公共一级NTP授时服务器存在被滥用的问题，2003年1月NTP pool项目正式设立。
+
+其基本原理通过域名“pool.ntp.org”基于特定规则划分为多个子域名并在这些子域名上</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2020-05-26">26 May 2020</time>
+                <span class="post-card-meta-length">12 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-ddosmon tag-scanmon tag-dnsmon tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/the-360netlab-threat-intelligence-service-on-rsac-2018/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DDoSMon</span>
+                </div>
+                <h2 class="post-card-title">
+                    RSA大会 &#x27;2018，360Netlab的威胁情报服务
+                </h2>
+            </header>
+                <div class="post-card-excerpt">RSA大会&#39;2018 即将在4月16日至19日期间在美国旧金山Moscone中心举办。在今年的这次大会上，360Netlab将首次集中展示威胁情报服务能力。您可以在 这里 观看介绍视频，记得可能需要手动调到1080P。您也可以试用在线系统，包括 DDoSMon 和ScanMon 。
+
+
+DDoSMon、ScanMon和DNSMon，是360Netlab本次展示威胁情报服务能力的三个主要组成部分。三者分别提供拒绝服务、网络扫描、域名异常的监控能力，应对全球网络流量实时处理。
+
+
+ * DNSMon是2018年新推出的能力。在DNSMon里面，我们实时的分析海量的DNS流量，并对流量中的各种异常和关联关系予以分析，从而发现大网流行的恶意代码行为。另一方面，DNSMon将我们指向未知威胁发现领域，我们期待在这个领域内作出更多成果。DNSMon相关已经公开的成功案例，包括之前公布的“偷电”系列分析文章。
+ * ScanMon早先在2016年ISC和2017 RSAC大会上两次公布。利用ScanMon，我们可以第一时间感知网络扫描行为，并方便有效的识别对应的攻击者。例如，360网络安全研究院在针</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-04-13">13 Apr 2018</time>
+                <span class="post-card-meta-length">2 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-en tag-browser-mining tag-dnsmon tag-pdns tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-iv-a-case-study-how-one-big-player-could-impact-the-cohive-business-in-china-en/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    A Case Study: How One Big Player Could Impact the Cohive Business in China
+                </h2>
+            </header>
+                <div class="post-card-excerpt">&quot;Who is Stealing My Power&quot; is a series of articles on the topic of web mining that we observed from our DNSMon system.
+
+
+As we mentioned in this series of one, two, and three , the players in the market can be mainly divided into mining sites and content/</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-03-09">09 Mar 2018</time>
+                <span class="post-card-meta-length">3 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-browser-mining tag-dnsmon tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-iv-a-case-study-how-one-big-player-could-impact-the-cohive-business-in-china/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    是谁悄悄偷走我的电（四）：国内大玩家对Coinhive影响的案例分析
+                </h2>
+            </header>
+                <div class="post-card-excerpt">《是谁悄悄偷走我的电》是我们的一个系列文章，讨论我们从 DNSMon 看到的网页挖矿的情况。在这个系列的之前的 一 、 二 和 三 中，我们已经介绍了整个Web挖矿的市场情况。当前我们知道，市场中的玩家主要可以分为挖矿网站和内容/流量网站，前者提供挖矿能力、后者提供流量，二者合力利用终端用户的浏览器算力挖矿获利。
+
+
+当前，挖矿网站中最大的玩家是 coinhive 家族，按照被引用数量计，占据了 58% 的市场份额。这些在我们之前的文章中已经提及。
+
+
+那么，流量网站的情况如何，有哪些有意思的情况？
+
+
+Coinhive 的关联域名
+
+
+DNSMon 有能力分析任意域名的 关联域名，在这个案例中可以拿来分析 coinhive 家族关联的 流量网站。通过分析这些流量网站的 DNS 流量，可以观察到很多有意思的事情。
+
+
+下面是一个域名访问规模图：
+
+
+
+
+在上图中:
+
+
+ * 横轴：代表时间，从 2018-01-31到2018-02-15
+ * 纵轴：</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-03-09">09 Mar 2018</time>
+                <span class="post-card-meta-length">6 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-en tag-browser-mining tag-dnsmon tag-measurement tag-pdns tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-iii-an-adnetwork-company-case-study-en/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    Who is Stealing My Power III: An Adnetwork Company Case Study
+                </h2>
+            </header>
+                <div class="post-card-excerpt">We recently noticed that one of the ad network provider started to perform in-browser coinhive cryptojacking when users visit websites which use this provider’s ad network service.
+
+
+As early as mid 2017, this ad network provider has been using domain DGA technology to generate seemingly random domains to bypass</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-24">24 Feb 2018</time>
+                <span class="post-card-meta-length">6 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-browser-mining tag-dnsmon tag-measurement tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-iii-an-adnetwork-company-case-study/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    是谁悄悄偷走我的电（三）：某在线广告网络公司案例分析
+                </h2>
+            </header>
+                <div class="post-card-excerpt">我们最近注意到，某在线网络广告商会将来自 coinhive 的javascript网页挖矿程序，插入到自己广告平台中，利用最终用户的浏览器算力，挖取比特币获利。
+
+
+P公司是一家在线广告网络公司，负责完成广告和广告位之间的匹配，并从中获取收入；Adblock 是一种浏览器插件，用户可以利用来屏蔽广告。显然，上述两者之间有长久的利益冲突和技术对抗。
+
+
+在2017-09之前，我们就注意到 P公司 会利用类似 DGA 的技术，生成一组看似随机的域名，绕过 adblock，从而保证其投放的广告能够到达最终用户，我们将这组域名称为 DGA.popad。
+
+
+从2017-12开始，我们观察到P公司开始利用这些 DGA.popad 域名，插入挖矿代码牟利。
+
+
+广告网络公司与广告屏蔽插件之间的对抗并不是新鲜事，但是广告网络公司参与到眼下流行的网页挖矿，这值得引起我们的注意。
+
+
+P公司背景简介
+
+
+P公司是一家在线广告网络（adnetwork）公司。所谓在线网络公司，其主要工作是连接广告主（advertiser）和媒体（publisher），聚合publisher提供的广告位，并与广告主的需求进行</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-24">24 Feb 2018</time>
+                <span class="post-card-meta-length">9 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-browser-mining tag-dnsmon tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/https-blog-netlab-360-com-the-list-of-top-alexa-websites-with-web-mining-code-embedded-on-their-homepage-cn/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Browser Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    是谁悄悄偷走我的电（二）：那些利用主页挖取比特币的网站
+                </h2>
+            </header>
+                <div class="post-card-excerpt">我们在早先的 文章 中提到，大约有 0.2% 的网站在使用主页中嵌入的JS代码挖矿：
+
+
+- Alexa 头部 10万网站中，有 241 (0.24%)个
+- Alexa 头部 30万网站中，有 629 (0.21%)个
+
+
+
+我们决定还是公开文中提到的全部站点列表，这样读者可以采取更多的行动。
+
+
+我们的 DNSMon 在2018-02-08 生成的列表，其格式如下：
+
+
+Alexa_Rank                       Website      Related-Coin-Mining-Domain/URL
+
+  1503                mejortorrent.com    |coinhive.com
+  1613                 baytpbportal.fi    |coinhive.com
+  3096                     shareae.com</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-13">13 Feb 2018</time>
+                <span class="post-card-meta-length">1 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-browser-mining tag-en tag-dnsmon tag-pdns tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/the-list-of-top-alexa-websites-with-web-mining-code-embedded-on-their-homepage/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Browser Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    The List of Top Alexa Websites With Web-Mining Code Embedded on Their Homepage
+                </h2>
+            </header>
+                <div class="post-card-excerpt">On our previous blog, we mentioned over 0.2% websites have web mining code embedded in their homepage: 241 (0.24%) out of Alexa Top 100,000 websites, and 629 (0.21%) out of Alexa Top 300,000 websites.
+
+
+And after some discussion, we figured it makes sense to release</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-08">08 Feb 2018</time>
+                <span class="post-card-meta-length">1 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-en tag-browser-mining tag-measurement tag-dnsmon tag-pdns tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-web-mining-domains-measurement-via-dnsmon-en/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    Who is Stealing My Power: Web Mining Domains Measurement via DNSMon
+                </h2>
+            </header>
+                <div class="post-card-excerpt">At 360Netlab, we are continuously analyzing DNS traffic. Based on this, we have established a DNSMon detection system that analyzes various anomalies and correlations in DNS traffic.
+
+
+We reported a few web mining sites such as openload.co in previous article. After that, we try to use DNSMon to further</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-07">07 Feb 2018</time>
+                <span class="post-card-meta-length">4 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-browser-mining tag-measurement tag-dnsmon tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/who-is-stealing-my-power-web-mining-domains-measurement-via-dnsmon/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    是谁悄悄偷走我的电（一）：利用DNSMon批量发现被挂挖矿代码的域名
+                </h2>
+            </header>
+                <div class="post-card-excerpt">在360网络安全研究院，我们持续的分析海量的DNS流量。基于此，我们建立了 DNSMon 检测系统，能够对 DNS 流量中的各种异常和关联关系予以分析。
+
+
+在之前的 文章 中，我们提到了 openload.co 等网站利用Web页面挖矿的情况。在那之后，我们进一步利用 DNSMon 对整个互联网上网页挖矿进行分析，本文描述我们目前看到情况。
+
+
+当前我们可以看到：
+
+
+ * 0.2% 的网站在首页嵌入了Web挖矿代码：Alexa Top 10万的网站中，有 241 (0.24%) ；
+   
+   Alexa Top 30万的网站中，有 629 (0.21%)
+ * 色情相关网站是主体，占据了这些网站的49%。其它还有诈骗（8%）、广告（7%）、挖矿（7%）、影视（6%）等类别</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2018-02-07">07 Feb 2018</time>
+                <span class="post-card-meta-length">6 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-en tag-browser-mining tag-pdns tag-dnsmon tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/openload-co-and-other-popular-alex-sites-are-abusing-client-browsers-to-mining-cryptocurrency/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    Openload.co and Other Popular Alex Sites Are Abusing Client Browsers to Mining Cryptocurrency
+                </h2>
+            </header>
+                <div class="post-card-excerpt">As of December 24, 2017, we noticed a group of Alex top websites abusing client browser&#39;s computing power in cryptocurrency mining. The javascript code is based on CoinHive with tricks to completely circumvent CoinHive&#39;s own operations to avoid CoinHive&#39;s commission fee. A total of</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-12-29">29 Dec 2017</time>
+                <span class="post-card-meta-length">4 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mining tag-browser-mining tag-pdns tag-dnsmon tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/openload-co-and-other-sites-are-mining-xmr-with-client-browser-without-coinhive/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mining</span>
+                </div>
+                <h2 class="post-card-title">
+                    openload.co 等网站绕过 CoinHive 使用客户端浏览器算力挖取门罗币
+                </h2>
+            </header>
+                <div class="post-card-excerpt">从2017年12月24日，我们注意到一组网站正在滥用客户终端浏览器的算力在挖矿。攻击者在利用了 CoinHive 的浏览器端挖矿代码基础上，完全绕过 CoinHive 自己运营，避开了 CoinHive 的抽成费用。提供挖矿服务的域名成组出现，共计22个，最早活动时间是2017-11-29。
+
+
+涉及使用上述挖矿服务的网站，包括openload.co，oload.stream，thevideo.me，streamcherry.com，streamango.com。其中，openload.co 网站的Alex排名为136，流行程度非常高，这意味着全球范围内有较多的终端用户算力会被攻击者攫取。
+
+
+5个异常域名
+
+
+dnsmon 是我们的dns异常检测系统。在2017-12-24日，系统报告了一组域名的访问异常，这组域名和对应的访问曲线如下：
+
+
+do69ifsly4.me
+hzsod71wov.me
+kho3au7l4z.me
+npdaqy6x1j.me
+vg02h8z1ul.me
+
+
+
+
+
+
+上图中可以注意到域名访问曲线惊人的一致，这意味着不同域名之间，很可能被同源的流量驱动。</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-12-29">29 Dec 2017</time>
+                <span class="post-card-meta-length">8 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-dns tag-sinkhole tag-measurement tag-wannacry tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/wannacry-from-dns-and-sinkhole-view/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">DNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    从DNS和sinkhole视角看WannaCry蠕虫
+                </h2>
+            </header>
+                <div class="post-card-excerpt">编注：本文来源自《中国计算机学会通讯》2017年第7期《WannaCry勒索蠕虫专刊》，作者是360网络安全研究院李丰沛。在本博客发布时，文章的字句和排版略有调整，以适应本技术博客。我们将该文章发布在本技术博客的动机之一，是因为这篇文章中对WannaCry的感染情况做了一个定量分析，本技术博客的后续其他分析文章可以参考做一个基准。
+
+
+域名系统(Domain Name System, DNS)数据作为全网流量数据的一种采样方式，可以在大网尺度对域名做有效的度量和分析。我们利用DNS数据，在过去数年里对多个安全事件，包括Mirai等僵尸网络、DGA等恶意域名，以及黑色产业链条进行跟踪和分析。对于最近爆发的WannaCry蠕虫病毒，利用DNS数据进行分析，也是很有意义的。
+
+
+众所周知，WannaCry蠕虫病毒有一个开关域名，即www.iuqerfsodp9ifjaposdfjhgosurijfaewrwergwea.com，该域名相关详细内容见《WannaCry勒索蠕虫专刊》其他文章。在蠕虫感染过程中，有效载荷通过445端口上的 MS17-010漏洞投递并成功启动后，会尝试访问特定域名的</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-07-17">17 Jul 2017</time>
+                <span class="post-card-meta-length">14 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-idn tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/idn_measurement_netlab/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    我们也来聊聊IDN
+                </h2>
+            </header>
+                <div class="post-card-excerpt">Introduction###
+
+
+  文中首先对IDN的历史和研究进行了回顾，并从近日有关IDN的博客入手，利用DNS派的流量数据，使用轻量级的方法，对目前网络中的“形近异义”的IDN域名进行了测量研究，并对IDN域名目前在网络中的用途进行分析。研究发现，1）Alexa Top10K 域名中至少有83个域名的形近异义IDN域名在活跃，即相关的知名网站受到这种潜在的钓鱼攻击影响；2）我们发现了一起真实的利用IDN域名对Facebook进行钓鱼攻击的案例（www.xn--facebok-i01c.com）。网络安全研究院会持续跟进这项测量研究，希望借此提醒有关厂商，注意提高与其相关的IDN域名品牌保护意识。
+
+
+
+Background###
+
+
+1. IDN
+
+  国际域名（Internationalized domain name, IDN）[1]，最早在1996年由Martin Durst提出并在1998年由Tan Juay kwang等人进行实现，是指在域名中包含至少一个特殊语言字母的域名，特殊语言包括中文、法文、拉丁文等。在DNS系统工作中，这种域名会被编码成ASCII字符串，并</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-04-22">22 Apr 2017</time>
+                <span class="post-card-meta-length">13 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-en tag-english tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/fraudulent-top-sites-an-underground-market-infrastructure-en/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    Fraudulent Top Sites, an Underground Market Infrastructure
+                </h2>
+            </header>
+                <div class="post-card-excerpt">[Update History]
+
+
+ * 2017-01-16 First English version. Updates in original Chinese version is merged.
+
+
+
+Overview
+
+
+Some domain names contains strings representing well-known companies are noticed in our abnormal traffic detecting system, including 360, ali, baidu, cloudflare, dnspod, google and microsoft. We later found these strings are adopted by a mature dedicated</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-01-16">16 Jan 2017</time>
+                <span class="post-card-meta-length">7 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-pdns tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/fraudulent-top-sites-a-dedicated-underground-market-infrastructure-chinese/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">PassiveDNS</span>
+                </div>
+                <h2 class="post-card-title">
+                    以大站的名义：专注地下产业的网络基础设施
+                </h2>
+            </header>
+                <div class="post-card-excerpt">【历史更新记录】
+
+
+ * 2017-01-10 原始版本
+ * 2017-01-16 补充了对服务器IP地址同源性的分析，此处分析指向性较弱，仅为完备性考虑
+
+
+
+概述
+
+
+在奇虎网络安全研究院(netlab@360.cn)，我们建立了一个基于DNS的异常流量监测系统，每天会检出若干异常流量以及对应的域名/IP。通常这些被检出的域名/IP都属于地下产业链条。
+
+
+但是，我们注意到一些代表知名公司的字符串也出现在这些被检出的域名中，包括360, ali, baidu, cloudflare, dnspod, google和microsoft。通过分析，我们认为这是有人冒用大站名义，为赌博、色情、私服等地下产业提供网络基础设施服务。
+
+
+这一基础设施结构错综复杂，运营时间长、支撑能力强、实际支撑的黑色灰色站点数以万计，已经构成了一个成熟的地下产业生态系统。
+
+
+
+域名和所仿冒的大站品牌
+
+
+我们检测到的这类域名如下表。
+
+
+如果只看域名，这些域名看起来非常象是大站提供的CDN服务。但分析可以看出，这些域名实际是某种基础设施，为赌博、色情、私服等地下产业服务。
+
+
+
+
+
+
+基于上述域名的错</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2017-01-10">10 Jan 2017</time>
+                <span class="post-card-meta-length">10 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+            
+<article class="post-card post tag-mirai tag-iot-botnet tag-pdns tag-iot tag-botnet tag-chinese tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/new-mirai-variant-with-dga-chinese-version/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                        <span class="post-card-primary-tag">Mirai</span>
+                </div>
+                <h2 class="post-card-title">
+                    Mirai 变种中的DGA
+                </h2>
+            </header>
+                <div class="post-card-excerpt">更新历史
+
+
+2016-12-09 首次发布
+
+2016-12-12 更新图0，修正了我们DGA实现中一处TLD选择的错误
+
+
+
+概要
+
+
+两个星期前，我们发现2个新的感染载体（也即TCP端口7547和5555变种）被用来传播MIRAI恶意软件。
+
+
+
+
+
+&lt;A Few Observations of The New Mirai Variant on Port 7547&gt;
+
+
+
+我的同事Ye Genshen快速设置了一些蜜罐，并且很快取得收获：11月28日一天就捕获了11个样本。 迄今为止，我们的蜜罐已从6个托管服务器捕获了53个独立样本。
+
+
+在分析其中一个新样本时，我的同事Qu Wenji发现一些类似DGA的代码，并猜测变种中包含有DGA功能，这个猜测很快就从我们的沙箱数据中得到验证。详细的逆向工作显示，在通过TCP端口7547和5555分发的MIRAI样本中确实存在DGA特征。在本博客中，我将介绍我们的发现。简单来说，我们找到的DGA的属性总结如下：
+
+
+ 1. 使用3个顶级域名：online/tech/support；
+ 2. L2域名固定长度12字符，每个字符从“a”</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2016-12-12">12 Dec 2016</time>
+                <span class="post-card-meta-length">5 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+
+    </div>
+
+    <nav class="pagination">
+    <span class="page-number">Page 1 of 2</span>
+        <a class="older-posts" href="/tag/pdns/page/2/">Older Posts <span aria-hidden="true">&rarr;</span></a>
+</nav>
+
+    
+</div>
+</main>
+
+    </div>
+
+    <footer class="site-footer outer">
+        <div class="inner">
+            <section class="copyright"><a href="https://blog.netlab.360.com">360 Netlab Blog - Network Security Research Lab at 360</a> &copy; 2026</section>
+            <nav class="site-footer-nav">
+                <ul class="nav">
+    <li class="nav-sign-up"><a href="#/portal/">Sign up</a></li>
+</ul>
+
+            </nav>
+            <div class="gh-powered-by"><a href="https://ghost.org/" target="_blank" rel="noopener">Powered by Ghost</a></div>
+        </div>
+    </footer>
+
+</div>
+
+
+<script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+    crossorigin="anonymous">
+</script>
+<script src="/assets/built/casper.js?v=00a3abdcf6"></script>
+<script>
+$(document).ready(function () {
+    // Mobile Menu Trigger
+    $('.gh-burger').click(function () {
+        $('body').toggleClass('gh-head-open');
+    });
+    // FitVids - Makes video embeds responsive
+    $(".gh-content").fitVids();
+});
+</script>
+
+
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { TechniqueRow } from '@/analytics/aggregate'
+import { tacticLabel, techniqueLabel } from '@/constants/mitre-zh'
 
 const props = defineProps<{
   techniques: TechniqueRow[]
@@ -34,12 +35,12 @@ const treeData = computed<TreeNode[]>(() => {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([tactic, techs]) => ({
           id: `tactic:${tactic}`,
-          label: `${tactic}（${techs.length}）`,
+          label: `${tacticLabel(tactic)}（${techs.length}）`,
           children: techs
             .sort((a, b) => a.techniqueId.localeCompare(b.techniqueId))
             .map((t) => ({
               id: `tech:${t.techniqueId}`,
-              label: `${t.techniqueId} · ${t.name}`,
+              label: `${t.techniqueId} · ${techniqueLabel(t.techniqueId, t.name)}`,
             })),
         })),
     },

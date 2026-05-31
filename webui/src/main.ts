@@ -5,6 +5,23 @@ import 'element-plus/dist/index.css'
 
 import App from './App.vue'
 import router from './router'
+import { hydrateAnalytics } from '@/api/analytics'
+import { USE_API } from '@/api/http'
 import './styles/main.css'
 
-createApp(App).use(router).use(ElementPlus, { locale: zhCn }).mount('#app')
+async function bootstrap() {
+  if (USE_API) {
+    try {
+      await hydrateAnalytics()
+    } catch (e) {
+      console.error('[ami] analytics bundle preload failed:', e)
+    }
+  }
+
+  const app = createApp(App)
+  app.use(router)
+  app.use(ElementPlus, { locale: zhCn })
+  app.mount('#app')
+}
+
+void bootstrap()

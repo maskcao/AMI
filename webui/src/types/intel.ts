@@ -42,6 +42,7 @@ export type KnowledgeLinkAction = 'created' | 'updated' | 'skipped' | 'pending'
 export interface IntelSummary {
   id: number
   title: string
+  sourceUrl: string
   disclosedAt: string | null
   sourceName: string
   collectSourceName: string
@@ -59,10 +60,17 @@ export interface IntelAiExtractPreview {
   suggestedTechniques: string[]
   suggestedMalware: string[]
   suggestedCves: string[]
+  tools?: string[]
+  infrastructure?: string[]
+  malwareClasses?: string[]
+  qualityHints?: string[]
+  qualityOk?: boolean
 }
 
 export interface IntelDetail extends IntelSummary {
   sourceUrl: string
+  hasRaw?: boolean
+  hasParsed?: boolean
   iocs: IntelIoc[]
   originalHtml: string
   /** Parser-extracted figures (plus inline &lt;img&gt; in originalHtml). */

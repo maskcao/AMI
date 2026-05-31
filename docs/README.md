@@ -2,7 +2,8 @@
 
 | Document | Description |
 |----------|-------------|
-| **[design.md](./design.md)** | **Platform design** (architecture, workflows, OpenCTI comparison, UI IA, phases) |
+| **[design.md](./design.md)** | **Platform design** (Go + SQLite, workflows, UI read path, phases) |
+| **[storage-and-artifacts.md](./storage-and-artifacts.md)** | **Data dir**, Raw/Parsed/corpus, manifest, backup |
 | **[knowledge-vs-intel.md](./knowledge-vs-intel.md)** | **Attack knowledge vs intel workbench** (differences and dimensions) |
 | [data-model.md](./data-model.md) | Entities, fields, STIX subset |
 | [opencti-mapping.md](./opencti-mapping.md) | OpenCTI → AMI feature mapping table |

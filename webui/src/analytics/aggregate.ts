@@ -1,5 +1,8 @@
 import { buildThreatActorList } from '@/analytics/actors'
 import { entityKeyEncode, infraEntityKey, malwareEntityKey } from '@/analytics/entity-profiles'
+import { getAnalyticsBundle } from '@/api/analytics'
+import { USE_API } from '@/api/http'
+import { emptyDashboardPayload } from '@/analytics/normalize'
 import { KNOWLEDGE_DETAILS } from '@/mock/knowledge'
 import { INTEL_DETAILS } from '@/mock/intel'
 import { malwareClassLabel, type MalwareClass } from '@/constants/malware'
@@ -111,6 +114,11 @@ function finalizeEntityRow<T extends { knowledge: LinkedKnowledgeRef[] }>(
 }
 
 export function buildDimensionNav(): DimensionNavItem[] {
+  if (USE_API) {
+    const b = getAnalyticsBundle()
+    if (b?.nav?.length) return b.nav
+    return []
+  }
   const s = buildAnalyticsSnapshot()
   return [
     { key: 'overview', label: 'Dashboard', icon: '📊', count: s.knowledgeCount },
@@ -170,6 +178,10 @@ function buildOperationalStats(): DashboardOperationalStats {
 }
 
 export function buildDashboardPayload(): DashboardPayload {
+  if (USE_API) {
+    const b = getAnalyticsBundle()
+    return b?.dashboard ?? emptyDashboardPayload()
+  }
   const snapshot = buildAnalyticsSnapshot()
   const operations = buildOperationalStats()
   const knowledgeRows: DashboardKnowledgeRow[] = KNOWLEDGE_DETAILS.map((k) => ({
@@ -180,7 +192,9 @@ export function buildDashboardPayload(): DashboardPayload {
     intelCount: k.intelCount,
     hasRansomware: k.malware.some((m) => m.class === 'ransomware'),
     updatedAt: k.updatedAt,
-  })).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  }))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, 10)
 
   return {
     snapshot,
@@ -193,6 +207,11 @@ export function buildDashboardPayload(): DashboardPayload {
 }
 
 export function buildAnalyticsSnapshot() {
+  if (USE_API) {
+    const b = getAnalyticsBundle()
+    if (b?.dashboard?.snapshot) return b.dashboard.snapshot
+    return emptyDashboardPayload().snapshot
+  }
   const cves = buildCveRows()
   const malware = buildMalwareRows()
   const actors = buildActorRows()
@@ -259,6 +278,9 @@ export function invalidateAggregateCache(): void {
 }
 
 export function buildCveRows(): CveRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.cve ?? []
+  }
   if (rowCache.cve) return rowCache.cve
   const map = new Map<string, CveRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
@@ -285,6 +307,9 @@ export function buildCveRows(): CveRow[] {
 type MalwareRowDraft = Pick<MalwareRow, 'name' | 'class' | 'knowledge'>
 
 export function buildMalwareRows(): MalwareRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.malware ?? []
+  }
   if (rowCache.malware) return rowCache.malware
   const map = new Map<string, MalwareRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
@@ -309,10 +334,16 @@ export function buildMalwareRows(): MalwareRow[] {
 }
 
 export function buildActorRows(): ActorRow[] {
+  if (USE_API) {
+    return (getAnalyticsBundle()?.actors ?? []) as ActorRow[]
+  }
   return buildThreatActorList()
 }
 
 export function buildTechniqueRows(): TechniqueRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.techniques ?? []
+  }
   if (rowCache.techniques) return rowCache.techniques
   const map = new Map<string, TechniqueRow>()
   for (const k of KNOWLEDGE_DETAILS) {
@@ -338,6 +369,9 @@ export function buildTechniqueRows(): TechniqueRow[] {
 type ToolRowDraft = Pick<ToolRow, 'name' | 'category' | 'knowledge'>
 
 export function buildToolRows(): ToolRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.tools ?? []
+  }
   if (rowCache.tools) return rowCache.tools
   const map = new Map<string, ToolRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
@@ -363,6 +397,9 @@ export function buildToolRows(): ToolRow[] {
 type InfraRowDraft = Pick<InfraRow, 'type' | 'value' | 'role' | 'knowledge'>
 
 export function buildInfraRows(): InfraRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.infra ?? []
+  }
   if (rowCache.infra) return rowCache.infra
   const map = new Map<string, InfraRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
@@ -388,6 +425,9 @@ export function buildInfraRows(): InfraRow[] {
 }
 
 export function buildIocRows(): IocRow[] {
+  if (USE_API) {
+    return getAnalyticsBundle()?.ioc ?? []
+  }
   if (rowCache.ioc) return rowCache.ioc
   const map = new Map<string, IocRow>()
 

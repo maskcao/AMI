@@ -1,5 +1,8 @@
 /** Collect source type — see docs/system-config.md */
 export type CollectSourceType =
+  | 'direct_url'
+  | 'paginated_list'
+  | 'threat_portal'
   | 'scheduled_url'
   | 'wechat_feed'
   | 'rss'
@@ -34,6 +37,7 @@ export interface ModelProviderSummary {
   baseUrl: string
   enabled: boolean
   defaultFor: string
+  apiKeyConfigured?: boolean
 }
 
 export interface ParserProfileSummary {

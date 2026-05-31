@@ -1,0 +1,15 @@
+{
+  "intelId": 8,
+  "sourceUrl": "https://blog.netlab.360.com",
+  "fetchedAt": "2026-05-31T08:40:24Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "c25a7fdba0cc854cadb569b40e88ca7f4a4f97ff9caf6be08955b01caaebfb01",
+      "sizeBytes": 54021
+    }
+  ]
+}

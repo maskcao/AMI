@@ -1,0 +1,15 @@
+{
+  "intelId": 18,
+  "sourceUrl": "https://blog.netlab.360.com/ddosmonster_the_return_of__fodcha_cn/",
+  "fetchedAt": "2026-05-31T08:40:26Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "7f62322e69d6656e387fdd2840f63b95416a9ae35239ec5048cdae121d86b048",
+      "sizeBytes": 52637
+    }
+  ]
+}

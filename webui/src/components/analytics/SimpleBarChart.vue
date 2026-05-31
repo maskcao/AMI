@@ -2,11 +2,11 @@
 import type { CountItem } from '@/analytics/aggregate'
 
 const props = defineProps<{
-  items: CountItem[]
+  items?: CountItem[]
   maxItems?: number
 }>()
 
-const display = () => props.items.slice(0, props.maxItems ?? 10)
+const display = () => (props.items ?? []).slice(0, props.maxItems ?? 10)
 const maxCount = () => Math.max(...display().map((i) => i.count), 1)
 </script>
 
@@ -22,7 +22,7 @@ const maxCount = () => Math.max(...display().map((i) => i.count), 1)
       </div>
       <span class="bar-value">{{ item.count }}</span>
     </div>
-    <el-empty v-if="!items.length" description="暂无数据" :image-size="48" />
+    <el-empty v-if="!display().length" description="暂无数据" :image-size="48" />
   </div>
 </template>
 

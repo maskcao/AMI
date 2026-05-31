@@ -1,0 +1,15 @@
+{
+  "intelId": 21,
+  "sourceUrl": "https://blog.netlab.360.com/a-new-botnet-orchard-generates-dga-domains-with-bitcoin-transaction-information/",
+  "fetchedAt": "2026-05-31T08:40:26Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "d62e83b69c09b59565db17723a339c40c09b1bdceac2818d5e5d0c7e7bb124f9",
+      "sizeBytes": 44421
+    }
+  ]
+}

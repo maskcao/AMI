@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { hydrateAnalytics } from '@/api/analytics'
+import { USE_API } from '@/api/http'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -84,7 +86,31 @@ const router = createRouter({
       path: '/settings/model',
       redirect: '/settings/provider',
     },
+    {
+      path: '/datacenter',
+      redirect: '/datacenter/logs',
+    },
+    {
+      path: '/datacenter/logs',
+      name: 'datacenter-logs',
+      component: () => import('@/views/datacenter/RuntimeLogPage.vue'),
+    },
   ],
+})
+
+router.beforeEach(async (to) => {
+  if (!USE_API) return true
+  const needsBundle =
+    to.path === '/dashboard' ||
+    to.path.startsWith('/analytics') ||
+    to.name === 'threat-actor-detail'
+  if (!needsBundle) return true
+  try {
+    await hydrateAnalytics()
+  } catch (e) {
+    console.error('[ami] analytics hydrate on navigation failed:', e)
+  }
+  return true
 })
 
 export default router

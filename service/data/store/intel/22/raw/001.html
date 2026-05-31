@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>DGA家族Orchard持续变化，新版本用比特币交易信息生成DGA域名</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <link rel="preload" as="style" href="/assets/built/screen.css?v=00a3abdcf6" />
+    <link rel="preload" as="script" href="/assets/built/casper.js?v=00a3abdcf6" />
+
+    <link rel="stylesheet" type="text/css" href="/assets/built/screen.css?v=00a3abdcf6" />
+
+    <link rel="icon" href="https://blog.netlab.360.com/content/images/size/w256h256/2019/02/netlab_xs-2.png" type="image/png">
+    <link rel="canonical" href="https://blog.netlab.360.com/orchard-dga/">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    
+    <meta property="og:site_name" content="360 Netlab Blog - Network Security Research Lab at 360">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="DGA家族Orchard持续变化，新版本用比特币交易信息生成DGA域名">
+    <meta property="og:description" content="DGA是一种经典的botnet对抗检测的技术，其原理是使用某种DGA算法，结合特定的种子和当前日期，定期生成大量的域名，而攻击者只是选择性的注册其中的极少数。对于防御者而言，因为难以事先确定哪些域名会被生成和注册，因而防御难度极大。
+
+
+360 netlab长期专注于botnet攻防技术的研究，维护了专门的DGA算法和情报库，并通过订阅情报的方式与业界分享研究成果。近期我们在分析未知DGA域名时发现一例不但使用日期，还会同时使用中本聪的比特币账号交易信息来生成DGA域名的例子。因为比特币交易的不确定性，该技术比使用时间生成的DGA更难预测，因而防御难度更大。
+
+
+该技术发现于一个名为Orchard的botnet家族。自从2021年2月份首次检测到该家族以来，我们发现它至少经历了3个版本的变化，中间甚至切换过编程语言。结合长期的跟踪结果和其它维度的信息，我们认为Orchard会是一个长期活跃、持续发展的botnet家族，值得警惕。本文将介绍Orchard的最新DGA技术，以及它这3个版本的发展过程。本文要点如下：
+
+
+ * Orchard是一个使用了DGA技术的botnet家族，核心功能">
+    <meta property="og:url" content="https://blog.netlab.360.com/orchard-dga/">
+    <meta property="og:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta property="article:published_time" content="2022-08-05T03:31:07.000Z">
+    <meta property="article:modified_time" content="2026-05-09T07:06:03.000Z">
+    <meta property="article:tag" content="Botnet">
+    <meta property="article:tag" content="DGA">
+    <meta property="article:tag" content="xmrig">
+    <meta property="article:tag" content="duckdns">
+    <meta property="article:tag" content="比特币">
+    <meta property="article:tag" content="挖矿">
+    <meta property="article:tag" content="ordhard">
+    <meta property="article:tag" content="Import 2022-11-30 11:16">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="DGA家族Orchard持续变化，新版本用比特币交易信息生成DGA域名">
+    <meta name="twitter:description" content="DGA是一种经典的botnet对抗检测的技术，其原理是使用某种DGA算法，结合特定的种子和当前日期，定期生成大量的域名，而攻击者只是选择性的注册其中的极少数。对于防御者而言，因为难以事先确定哪些域名会被生成和注册，因而防御难度极大。
+
+
+360 netlab长期专注于botnet攻防技术的研究，维护了专门的DGA算法和情报库，并通过订阅情报的方式与业界分享研究成果。近期我们在分析未知DGA域名时发现一例不但使用日期，还会同时使用中本聪的比特币账号交易信息来生成DGA域名的例子。因为比特币交易的不确定性，该技术比使用时间生成的DGA更难预测，因而防御难度更大。
+
+
+该技术发现于一个名为Orchard的botnet家族。自从2021年2月份首次检测到该家族以来，我们发现它至少经历了3个版本的变化，中间甚至切换过编程语言。结合长期的跟踪结果和其它维度的信息，我们认为Orchard会是一个长期活跃、持续发展的botnet家族，值得警惕。本文将介绍Orchard的最新DGA技术，以及它这3个版本的发展过程。本文要点如下：
+
+
+ * Orchard是一个使用了DGA技术的botnet家族，核心功能">
+    <meta name="twitter:url" content="https://blog.netlab.360.com/orchard-dga/">
+    <meta name="twitter:image" content="https://blog.netlab.360.com/content/images/size/w1200/2019/02/astronomy-constellation-dark-998641-4.jpg">
+    <meta name="twitter:label1" content="Written by">
+    <meta name="twitter:data1" content="daji">
+    <meta name="twitter:label2" content="Filed under">
+    <meta name="twitter:data2" content="Botnet, DGA, xmrig, duckdns, 比特币, 挖矿, ordhard, Import 2022-11-30 11:16">
+    <meta name="twitter:site" content="@360Netlab">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="800">
+    
+    <script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "publisher": {
+        "@type": "Organization",
+        "name": "360 Netlab Blog - Network Security Research Lab at 360",
+        "url": "https://blog.netlab.360.com/",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png"
+        }
+    },
+    "author": {
+        "@type": "Person",
+        "name": "daji",
+        "image": {
+            "@type": "ImageObject",
+            "url": "https://blog.netlab.360.com/content/images/2021/09/T399JQTRA-U01QG481V43-7030b21116af-192.png",
+            "width": 192,
+            "height": 192
+        },
+        "url": "https://blog.netlab.360.com/author/daji/",
+        "sameAs": []
+    },
+    "contributor": [
+        {
+            "@type": "Person",
+            "name": "suqitian",
+            "image": {
+                "@type": "ImageObject",
+                "url": "https://blog.netlab.360.com/content/images/2020/11/2-1Z5061542320-L.jpg"
+            },
+            "url": "https://blog.netlab.360.com/author/suqitian-2/",
+            "sameAs": []
+        }
+    ],
+    "headline": "DGA家族Orchard持续变化，新版本用比特币交易信息生成DGA域名",
+    "url": "https://blog.netlab.360.com/orchard-dga/",
+    "datePublished": "2022-08-05T03:31:07.000Z",
+    "dateModified": "2026-05-09T07:06:03.000Z",
+    "keywords": "Botnet, DGA, xmrig, duckdns, 比特币, 挖矿, ordhard, Import 2022-11-30 11:16",
+    "description": "DGA是一种经典的botnet对抗检测的技术，其原理是使用某种DGA算法，结合特定的种子和当前日期，定期生成大量的域名，而攻击者只是选择性的注册其中的极少数。对于防御者而言，因为难以事先确定哪些域名会被生成和注册，因而防御难度极大。\n\n\n360 netlab长期专注于botnet攻防技术的研究，维护了专门的DGA算法和情报库，并通过订阅情报的方式与业界分享研究成果。近期我们在分析未知DGA域名时发现一例不但使用日期，还会同时使用中本聪的比特币账号交易信息来生成DGA域名的例子。因为比特币交易的不确定性，该技术比使用时间生成的DGA更难预测，因而防御难度更大。\n\n\n该技术发现于一个名为Orchard的botnet家族。自从2021年2月份首次检测到该家族以来，我们发现它至少经历了3个版本的变化，中间甚至切换过编程语言。结合长期的跟踪结果和其它维度的信息，我们认为Orchard会是一个长期活跃、持续发展的botnet家族，值得警惕。本文将介绍Orchard的最新DGA技术，以及它这3个版本的发展过程。本文要点如下：\n\n\n * Orchard是一个使用了DGA技术的botnet家族，核心功能",
+    "mainEntityOfPage": "https://blog.netlab.360.com/orchard-dga/"
+}
+    </script>
+
+    <meta name="generator" content="Ghost 6.37">
+    <link rel="alternate" type="application/rss+xml" title="360 Netlab Blog - Network Security Research Lab at 360" href="https://blog.netlab.360.com/rss/">
+    
+    <script defer src="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/sodo-search.min.js" data-key="1fd4df542dc24426ca7c59275e" data-styles="https://cdn.jsdelivr.net/ghost/sodo-search@~1.8/umd/main.css" data-sodo-search="https://blog.netlab.360.com/" data-locale="en" crossorigin="anonymous"></script>
+    
+    <link href="https://blog.netlab.360.com/webmentions/receive/" rel="webmention">
+    <script defer src="/public/cards.min.js?v=00a3abdcf6"></script><style>:root {--ghost-accent-color: #eca265;}</style>
+    <link rel="stylesheet" type="text/css" href="/public/cards.min.css?v=00a3abdcf6">
+    <style type='text/css'>
+	#ghost-portal-root {
+        display: none;
+    }
+</style>
+
+</head>
+<body class="post-template tag-botnet tag-dga tag-xmrig tag-duckdns tag-bi-te-bi tag-wa-kuang tag-ordhard tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 is-head-left-logo has-sans-body has-cover">
+<div class="viewport">
+
+    <header id="gh-head" class="gh-head outer">
+        <div class="gh-head-inner inner">
+            <div class="gh-head-brand">
+                <a class="gh-head-logo" href="https://blog.netlab.360.com">
+                        <img src="https://blog.netlab.360.com/content/images/2019/02/netlab-brand-5.png" alt="360 Netlab Blog - Network Security Research Lab at 360">
+                </a>
+                <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+                <button class="gh-burger" aria-label="Main Menu"></button>
+            </div>
+
+            <nav class="gh-head-menu">
+                <ul class="nav">
+    <li class="nav-botnet"><a href="https://blog.netlab.360.com/tag/botnet/">Botnet</a></li>
+    <li class="nav-dnsmon"><a href="https://blog.netlab.360.com/tag/dnsmon/">DNSMon</a></li>
+    <li class="nav-ddos"><a href="https://blog.netlab.360.com/tag/ddos/">DDoS</a></li>
+    <li class="nav-passivedns"><a href="https://blog.netlab.360.com/tag/pdns/">PassiveDNS</a></li>
+    <li class="nav-mirai"><a href="https://blog.netlab.360.com/tag/mirai/">Mirai</a></li>
+    <li class="nav-dta"><a href="https://blog.netlab.360.com/tag/dta/">DTA</a></li>
+</ul>
+
+            </nav>
+
+            <div class="gh-head-actions">
+                        <button class="gh-search gh-icon-btn" aria-label="Search this site" data-ghost-search><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="20" height="20"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            </div>
+        </div>
+    </header>
+
+    <div class="site-content">
+        
+
+
+
+<main id="site-main" class="site-main">
+<article class="article post tag-botnet tag-dga tag-xmrig tag-duckdns tag-bi-te-bi tag-wa-kuang tag-ordhard tag-import-2022-11-30-11-16 tag-hash-import-2026-05-11-03-12 no-image ">
+
+    <header class="article-header gh-canvas">
+
+        <div class="article-tag post-card-tags">
+                <span class="post-card-primary-tag">
+                    <a href="/tag/botnet/">Botnet</a>
+                </span>
+        </div>
+
+        <h1 class="article-title">DGA家族Orchard持续变化，新版本用比特币交易信息生成DGA域名</h1>
+
+
+        <div class="article-byline">
+        <section class="article-byline-content">
+
+            <ul class="author-list instapaper_ignore">
+                <li class="author-list-item">
+                    <a href="/author/daji/" class="author-avatar" aria-label="Read more of daji">
+                        <img class="author-profile-image" src="/content/images/size/w100/2021/09/T399JQTRA-U01QG481V43-7030b21116af-192.png" alt="daji" />
+                    </a>
+                </li>
+                <li class="author-list-item">
+                    <a href="/author/suqitian-2/" class="author-avatar" aria-label="Read more of suqitian">
+                        <img class="author-profile-image" src="/content/images/size/w100/2020/11/2-1Z5061542320-L.jpg" alt="suqitian" />
+                    </a>
+                </li>
+            </ul>
+
+            <div class="article-byline-meta">
+                <h4 class="author-name"><a href="/author/daji/">daji</a>, <a href="/author/suqitian-2/">suqitian</a></h4>
+                <div class="byline-meta-content">
+                    <time class="byline-meta-date" datetime="2022-08-05">05 Aug 2022</time>
+                        <span class="byline-reading-time"><span class="bull">&bull;</span> 18 min read</span>
+                </div>
+            </div>
+
+        </section>
+        <a href="#/share" class="gh-button gh-button-share">Share</a>
+        </div>
+
+
+    </header>
+
+    <section class="gh-content gh-canvas">
+        <!--kg-card-begin: markdown--><p>DGA是一种经典的botnet对抗检测的技术，其原理是使用某种DGA算法，结合特定的种子和当前日期，定期生成大量的域名，而攻击者只是选择性的注册其中的极少数。对于防御者而言，因为难以事先确定哪些域名会被生成和注册，因而防御难度极大。</p>
+<p>360 netlab长期专注于botnet攻防技术的研究，维护了专门的<a href="https://data.netlab.360.com/dga/?ref=blog.netlab.360.com">DGA算法和情报库</a>，并通过订阅情报的方式与业界分享研究成果。近期我们在分析未知DGA域名时发现一例不但使用日期，还会同时使用中本聪的比特币账号交易信息来生成DGA域名的例子。因为比特币交易的不确定性，该技术比使用时间生成的DGA更难预测，因而防御难度更大。</p>
+<p>该技术发现于一个名为Orchard的botnet家族。自从2021年2月份首次检测到该家族以来，我们发现它至少经历了3个版本的变化，中间甚至切换过编程语言。结合长期的跟踪结果和其它维度的信息，我们认为Orchard会是一个长期活跃、持续发展的botnet家族，值得警惕。本文将介绍Orchard的最新DGA技术，以及它这3个版本的发展过程。本文要点如下：</p>
+<ul>
+<li>Orchard是一个使用了DGA技术的botnet家族，核心功能是在受害者机器上安装各种恶意软件。</li>
+<li>从2021年2月至今，我们先后检测到3个版本的Orchard样本，均使用了DGA技术。</li>
+<li>Orchard的DGA算法一直未变，但日期的使用方式一直在变，最新版同时支持使用比特币账号信息来生成单独的DGA域名。</li>
+<li>除了DGA，Orchard还硬编码了C2域名。</li>
+<li>Orchard目前仍在活跃，致力于门罗币挖矿。</li>
+</ul>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h2 id="">传播方式、规模以及影响范围</h2>
+<p>Orchard采用了“硬编码域名+DGA”的冗余C2机制，并且每个版本都硬编码了1个唯一的DuckDNS动态域名作为C2，根据它们的DGA实现方式和硬编码的域名，我们把已经检测到的Orchard样本分为3个版本：</p>
+<pre><code>v1, orcharddns.duckdns.org
+v2，orchardmaster.duckdns.org
+v3, ojena.duckdns.org
+</code></pre>
+<p>它们的时间线如下：</p>
+<pre><code>* 2021年3月，检测到v1版本，使用C++开发。结合历史数据，我们将v1首次出现时间提前到2021年2月。
+* 2021年9月，检测到v2版本，它使用Golang和C++编写。
+* 2022年7月，检测到v3版本，编写语言回到C++。
+</code></pre>
+<p>这3个版本都支持通过感染USB盘的方式进行传播，这一点跟传统的病毒很像，具体实现参考后面的“USB感染逻辑”部分。理论上，Orchard也完全可以通过其它方式传播。</p>
+<p>利用我们的图系统结合PDNS和其它维度的数据，我们发现v1和v2的C2存在明显的共享IP的情况，如下图所示。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/-----C2.png" alt="-----C2" loading="lazy"></p>
+<p>图系统帮我们找到了更多的C2 IP和域名，详见后面的IoC部分，这里的域名特点是都以duckdns.org结尾。v3因为比较新，没发现其它的关联域名，下面是v3域名的活跃情况。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v3----.png" alt="v3----" loading="lazy"></p>
+<p>能看到它是今年5月上线，然后逐渐活跃，目前应该仍然在活跃期内。</p>
+<p>基于PDNS我们对3个版本的感染规模做了评估，其中v1和v2节点数近千，v3因为出现较晚，节点数不到500，下面是各个版本域名到具体IP的详细解析数。</p>
+<pre><code># v1, orcharddns.duckdns.org
+37, 45.61.185.36
+413,  45.61.186.52
+1301,  45.61.187.240
+207, 205.185.124.143
+
+# v2, orchardmaster.duckdns.org
+45,  45.61.185.36
+104, 45.61.186.52
+659,  45.61.187.240
+
+# v3, ojena.duckdns.org
+418, 45.61.185.231
+</code></pre>
+<p>需要强调的是上面的规模数据只是我们视野内看到的，实际的应该要比这更多。</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h2 id="">样本分析</h2>
+<p>Orchard样本在样本层面多使用loader，用于对抗分析和自我保护。目前看到的Orchard loader并不固定，即使单个版本也会出现多种loader的情况，比如v1版本的Orchard以base64字符串的形式存在于loader中，v2/v3版本的样本有的以资源文件的形式存放在loader中。各个版本还都曾使用过例如VMP、Enigma等虚拟壳来保护自身。总的来说，Orchard的工作流程可以用下面的图来总结。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/----3.png" alt="----3" loading="lazy"></p>
+<p>Orchard三个版本的功能基本相同，包括：</p>
+<ul>
+<li>上传设备及用户信息</li>
+<li>响应指令/下载执行下一阶段的模块</li>
+<li>感染USB存储设备</li>
+</ul>
+<p>下面从DGA算法、C2通信和主机行为等几个维度分别分析3个版本Orchard的核心功能。</p>
+<h3 id="v1">v1版本</h3>
+<p>该版本的分析以MD5=5c883ff8539b8d04be017a51a84e3af8的样本为基础。它在运行时首先释放内嵌的PE文件到自启动目录下，所释放的PE在内存中进行base64解码得到orchard的数据，随后该PE将System32/SysWOW64下的任一exe作为傀儡进程，来运行保存的orchard代码。该版本Orchard整体逻辑如下图，主要分为网络通信和USB感染两部分，最终功能取决于C2下发的具体模块，因此orchard本身可以认为是一个Downloader的角色。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v1----.png" alt="v1----" loading="lazy"></p>
+<p>此处主要描述其网络通信过程（三个版本的USB感染逻辑相同，详见USB感染一节）。</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><p>C2通信过程较为简单，bot在check-in过程中向C2发送收集到的主机信息，然后等待C2响应的指令。v1版本所收集信息包括：卷序列号（HWID）、电脑名称、用户名、操作系统名称、系统版本、已安装的捕获驱动程序名称、杀软信息、父进程文件修改时间、置顶窗口名称及窗口标题等，这些信息以“[o.r.c.h.a.r.d]”作为分隔符进行拼接后发送，如下图所示。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v1.C-------4.png" alt="v1.C-------4" loading="lazy"></p>
+<p>C2响应数据格式一般为“指令+数据”，指令的功能通过指令码指定。下面是一个具体的C2响应，其中&quot;[&amp;&amp;]&quot;代表指令码2，代表下载执行，具体处理过程分为2种：响应数据如果是URL，则下载URL对应的PE并执行；如果是base64编码的内容，则先解码然后执行解码后的数据。此处响应的数据实际是base64编码的新版本PE文件，相当于升级，这也表明老版本可能已经废弃。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v1.C-------5.png" alt="v1.C-------5" loading="lazy"></p>
+<p>v1版本一共定义了8个指令，指令码与指令字符串的对应关系如下：</p>
+<pre><code>1 \[=] 
+2 \[&amp;&amp;] 
+3 \[##] 
+4 \[###] 
+5 \[%%] 
+6 \[%%%] 
+7 \[#\_#] 
+8 \[\_\_\] \[&gt;&gt;] \[&lt;&lt;] \[^^] \[\*\] \[\~\] \[@] \[!] \[#\*\#\] \[#@#] 
+</code></pre>
+<p>由于某些指令置空，8个指令实际对应三种操作（后续版本大同小异）：</p>
+<ul>
+<li>指令码1和2：判断响应数据为URL或者PE，如果是URL则下载执行，如果是PE，则创建进程执行（CreateProcess创建进程、傀儡进程、远程线程注入等）。</li>
+<li>指令码3、4、8：终结当前进程删除原始文件，或者重新启动。</li>
+<li>指令码7：再次收集C2、port、PID、文件名信息向C2进行发送，示例：orcharddns.duckdns.org[o.r.c.h.a.r.d]5890[o.r.c.h.a.r.d]2260[o.r.c.h.a.r.d]stage-3_.exe[o.r.c.h.a.r.d]</li>
+</ul>
+<h4 id="dga">DGA算法</h4>
+<p>v1的DGA以日期字符串（比如“2022/07/05”）作为输入，计算其MD5值，然后将MD5字符串均分成长度为8的四个子字符串，依次与 .com、.net、.org、.duckdns.org 这4个后缀拼接，得到每天4组16个DGA域名，算法实现如下。</p>
+<pre><code># 2021/04/15
+import datetime
+import hashlib
+
+days=30
+for i in range(0, days):
+    datex = (datetime.datetime.now() - datetime.timedelta(days=i)).strftime('%Y/%m/%d')
+    print(&quot;seed: &quot;, datex)
+    md5 = hashlib.md5(datex.encode()).hexdigest()
+    print('md5: ', md5)
+
+    dga_list = []
+    dga_list.append(md5[:8])
+    dga_list.append(md5[8:16])
+    dga_list.append(md5[16:24])
+    dga_list.append(md5[24:32])
+    for j in range(len(dga_list)):
+        print(dga_list[j] + '.com')
+        print(dga_list[j] + '.net')
+        print(dga_list[j] + '.org')
+        print(dga_list[j] + '.duckdns.org')
+</code></pre>
+<p>示例域名如下：</p>
+<pre><code>seed:  2022/07/05
+md5:  91ac64d29f78281ad802f44648b2137f
+91ac64d2.com
+91ac64d2.net
+91ac64d2.org
+91ac64d2.duckdns.org
+9f78281a.com
+9f78281a.net
+9f78281a.org
+9f78281a.duckdns.org
+d802f446.com
+d802f446.net
+d802f446.org
+d802f446.duckdns.org
+48b2137f.com
+48b2137f.net
+48b2137f.org
+48b2137f.duckdns.org
+</code></pre>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h3 id="v2">v2版本</h3>
+<p>v2版本出现了两种编程语言实现的样本，分别是Golang和C++，但是功能相同。这里的分析以MD5=<a href="https://www.virustotal.com/gui/file/5da3a405fea843ed422c06987179e0ac47b915c1d12cc608ce4ecb187edf5f03/details?ref=blog.netlab.360.com">f3e0b960a48b433bc4bfe6ac44183b74</a>的Golang样本为例，它的C2初始化函数如下图所示，能明显看到硬编码的C2域名。</p>
+<!--kg-card-end: markdown--><figure class="kg-card kg-image-card"><img src="https://blog.netlab.360.com/content/images/2021/09/3.png" class="kg-image" alt loading="lazy"></figure><!--kg-card-begin: markdown--><p>v2版本开始使用json格式，字段含义相对清晰。其收集的信息跟v1大致相同，包括：卷序列号（HWID）、电脑名称、用户名、系统版本、杀软信息、活动窗口信息等，新增的字段有：.net框架版本（比如v2.0.50727）、USB 状态、发包类型及自身版本。下面是一个实际观察到的版本号信息，Bot_Version=1.2/G可能的解释为：版本=v1.2，编写语言=Golang。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v2.golang-----1.png" alt="v2.golang-----1" loading="lazy"></p>
+<p>v2版本的C++语言样本集成了同样的C2，上线包中的版本信息则变成了“Bot_version:1/C”，它所收集的信息如下图所示。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v2.C-------1.png" alt="v2.C-------1" loading="lazy"></p>
+<p>根据代码相似性分析，v2版本的C++样本跟后来的v3版本代码同源，说明后者是从前者进化而来。</p>
+<p>v2版本一共有两种指令：</p>
+<ul>
+<li>指令1：终结当前进程删除原始文件，或者重新启动。</li>
+<li>指令2：判断响应数据为URL或者PE，如果是URL则下载执行，如果是PE，则创建进程执行（CreateProcess创建进程、傀儡进程、远程线程注入等）。</li>
+</ul>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h4 id="dga">DGA算法</h4>
+<p>v2版本的DGA算法跟v1相同，差别在于对日期字符串的处理，v2会在日期字符串后拼接硬编码的域名“orchardmaster.duckdns.org”，形如“2022/07/05orchardmaster.duckdns.org&quot;，然后套用v1版本的DGA算法生成域名。</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h3 id="v3">v3版本</h3>
+<p>v3的开发语言回到C++编写，同样包括C2通信和USB感染功能。C2通信逻辑在一个线程中运行，同时该线程还包括一个跟XMRig挖矿绑定的辅助线程，当Orchard接收完毕下发的XMrig程序并创建傀儡进程运行之后，辅助线程会向C2再次发送挖矿相关的硬件信息，尝试从C2读取挖矿软件的配置，目的是为了检查是否需要动态修改XMRig运行时的配置（XMRig提供了一套HTTP api，支持动态读取并修改运行时的挖矿配置）。</p>
+<p>以MD5=cb442cbff066dfef2e3ff0c56610148f的样本为例，C2通信功能如下。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/07/v3-1.png" alt="v3-1" loading="lazy"></p>
+<p>v3版本在C2通信中同样使用json格式来保存主机信息，发送数据的整体结构为<strong>Byte_0x46+TotalLen+InfoLen+Info.json</strong>。相比v2，v3增加了多个跟挖矿相关的字段，收集的信息包括：</p>
+<ul>
+<li>Active_Window：当前活动窗口名称</li>
+<li>Antivirus：杀软信息</li>
+<li>Authentiate_Type：Windows身份验证类型</li>
+<li>CPU_Model：CPU信息</li>
+<li>Camera：是否存在摄像头</li>
+<li>Elevated：是否是管理员权限</li>
+<li>GPU_Models：显卡信息</li>
+<li>Identity：HWID\用户名\电脑名称</li>
+<li>Operating_System：系统版本信息</li>
+<li>Ram_Size：运行内存大小</li>
+<li>System_Architecture：处理器个数</li>
+<li>Threads：每个处理器内核个数</li>
+<li>Version：Orchard版本</li>
+</ul>
+<p>v3的上线包实例如下所示。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v3.c-------1-1.png" alt="v3.c-------1-1" loading="lazy"></p>
+<p>C2响应消息的body部分也为json格式，其结构为：TotalLen.dword+ Byte0x46+TotalLen+RespDataLen+RespData.json。v3支持8个指令，对应3种操作：</p>
+<ul>
+<li>指令1：收集主机信息/自身运行状态并发送到C2（字段包括Domain、In_Memory、Install_Path、Is_Patched、Message_Type、Patch_Name、Port、Power_SaverMode、Process_ID、Process_Name、Process_Path、System_Idle、System_Uptime）</li>
+<li>指令4、6：终结当前进程删除原始文件，或者重新启动。</li>
+<li>指令7、8：下载&amp;执行下发的矿机程序</li>
+</ul>
+<p>下面是一个实际跟踪到的C2响应指令。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v33-3.png" alt="v33-3" loading="lazy"></p>
+<p>其中Transfer_Port表示希望主机再次向2929进行请求，Message_Type表示指令码，其值为7，表示下载&amp;执行。</p>
+<p>收到上述指令后，bot再次向C2的TCP 2929端口发起请求，Cuda是Nvidia推出的只能用于自家GPU的并行计算框架，这里的Cuda_Version为0表示不支持Cuda。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v31-5.png" alt="v31-5" loading="lazy"></p>
+<p>随后C2响应一个XMRig矿机程序，Client接收保存后根据指令7将XMRig注入傀儡进程开始执行挖矿工作。</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/08/v34-1-1.png" alt="v34-1-1" loading="lazy"></p>
+<p>分析过程中我们发现v3版本最近在持续分发一个同样的XMRig挖矿程序，后者集成了默认的挖矿配置信息，私有矿池地址：45.61.187.7:7733</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h4 id="dga">DGA算法</h4>
+<p>v3的DGA算法未变，但输入的变化较大。实际上它会生成两组DGA域名，第一组域名的输入拼接算法是日期字符串+“ojena.duckdns.org”， 形如 “2022-08-02ojena.duckdns.org”。第二组域名的输入为<code>https://blockchain.info/balance?active=1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code> 这个URL的返回结果，一个典型的返回结果如下所示：</p>
+<pre><code>{&quot;1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa&quot;:&quot;final_balance&quot;:6854884253,&quot;n_tx&quot;:3393,&quot;total_received&quot;:6854884253}}
+</code></pre>
+<p>相关字段的含义可以参考<a href="https://zh.m.wikipedia.org/zh-hans/Blockchain.com?ref=blog.netlab.360.com">Blockchain</a>的<a href="http://cw.hubwiz.com/card/c/blockchain-api/1/3/9/?ref=blog.netlab.360.com">API手册</a>：</p>
+<pre><code>n_tx：交易数量
+total_received：接收比特币总量
+final_balance：最终余额
+</code></pre>
+<p>值得强调的是v3版本并未对返回的结果进行解析，而是作为整体直接输入DGA算法来生成域名。而钱包地址<code>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code> 据说是中本聪本人所持有的<a href="https://en.bitcoin.it/wiki/Genesis_block?ref=blog.netlab.360.com">比特币创世地址</a>。过去的十几年间，由于各种原因，每天都会有人向该钱包转入小量比特币，因此它是变化的，并且该变化很难预测，因此该钱包的余额信息也可以作为DGA输入。</p>
+<p>在我们编写文章时，发现近期已有<a href="https://bin.re/blog/the-dgas-of-sharkbot/?ref=blog.netlab.360.com">其他研究人员注意到v3版本这种将比特币账号交易信息用作DGA输入的现象</a>，所分析结果与我们一致，但对方并没有注意到Orchard其实早已出现。</p>
+<p>完整的v3版本DGA算法如下：</p>
+<pre><code># 2022/07/05
+import datetime
+import requests
+import hashlib
+
+# cluster 1
+days = 30
+for i in range(0, days):
+    domains = ['ojena.duckdns.org', 'vgzero.duckdns.org']
+    for do in domains:
+        datex = (datetime.datetime.now() - datetime.timedelta(days=i)).strftime('%Y-%m-%d' + do)
+        print(&quot;seed_1: %s&quot; % datex)
+        md5 = hashlib.md5(datex.encode()).hexdigest()
+        print(&quot;md5: %s&quot; % md5)
+        
+        dga_list = []
+        dga_list.append(md5[:8])
+        dga_list.append(md5[8:16])
+        dga_list.append(md5[16:24])
+        dga_list.append(md5[24:32])
+        for j in range(len(dga_list)):
+            print(dga_list[j] + '.com')
+            print(dga_list[j] + '.net')
+            print(dga_list[j] + '.org')
+            print(dga_list[j] + '.duckdns.org')
+
+
+# cluster 2
+url = 'https://blockchain.info/balance?active=1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa' 
+res = requests.get(url)
+wallet_info = res.text
+print('seed_2: %s' % wallet_info)
+md5 = hashlib.md5(wallet_info.encode()).hexdigest()
+print('md5: %s' % md5)
+
+dga_list = []
+dga_list.append(md5[:8])
+dga_list.append(md5[8:16])
+dga_list.append(md5[16:24])
+dga_list.append(md5[24:32])
+for j in range(len(dga_list)):
+    print(dga_list[j] + '.com')
+    print(dga_list[j] + '.net')
+    print(dga_list[j] + '.org')
+    print(dga_list[j] + '.duckdns.org')
+
+</code></pre>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h3 id="usb">USB感染逻辑</h3>
+<p>Orchard的文件感染并非传统的代码插入，而是一种文件替换。当检测到USB存储设备时，Orchard会在设备根目录下创建隐藏目录，遍历所有文件进行感染，并将感染前和感染后的文件都备份到该隐藏目录下，被感染对象在感染时去掉了类型属性，感染后全部变为exe类型，并追加了.exe后缀，变成了可执行文件。随后样本会复制自身到被感染目录下并随机命名，该字符串保存到了被感染文件的资源里。当设备中的被感染文件在新系统中被用户执行后，则会启动隐藏目录中的样本文件，达到感染传播的目的。</p>
+<p>USB感染过程会涉及两个内嵌的PE文件，第一个文件是DLL文件，会被释放到%LocalAppData%目录下，该DLL被Orchard称作CGO_Helper，主要用于提取和替换被感染文件的图标，其MD5是10D42F5465D5D8808B43619D8266BD99。第二个文件是exe文件，MD5为f3c06399c68c5fdf80bb2853f8f2934b，作为存储感染代码的模板文件，被感染文件的全部数据将被替换为该模板文件的数据。该模板的功能是根据资源中的exe名称寻找隐藏目录下对应的exe启动执行，所以被感染文件的资源中保存的是备份的Orchard样本名称。</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><p>USB感染情况示例如下，被感染文件资源中保存了Orchard样本的名称，当用户点击受感染的exe，将启动隐藏目录下的Orchard样本文件：</p>
+<p><img src="https://blog.netlab.360.com/content/images/2022/07/-----4.png" alt="-----4" loading="lazy"></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h2 id="">总结</h2>
+<p>Orchard是一个使用了DGA技术的botnet家族，最新版本致力于挖矿，并开始使用中本聪的比特币账号交易信息这类更难预测的信息作为DGA的输入，增加了检测难度。在1年多的时间里，Orchard先后出现了至少3个不同版本，编程语言和DGA实现都有变化，这说明Orchard是一个仍处于活跃期的botnet家族，预计后续会有更多的变种出现，值得我们警惕。对Orchard我们会持续保持关注，有新的发现会继续公开。</p>
+<h2 id="">联系我们</h2>
+<p>感兴趣的读者，可以在 <a href="https://twitter.com/360Netlab?ref=blog.netlab.360.com"><strong>twitter</strong></a> 或者通过邮件<strong>netlab[at]360.cn</strong>联系我们。</p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h2 id="iocs">IOCs</h2>
+<h3 id="c2">C2</h3>
+<pre><code>orcharddns.duckdns.org
+orchardmaster.duckdns.org
+ojena.duckdns.org
+vgzero.duckdns.org
+victorynicholas.duckdns.org
+zamarin1.duckdns.org
+
+45.61.185.36
+45.61.186.52
+45.61.187.240
+205.185.124.143
+45.61.185.231
+</code></pre>
+<h3 id="md5">MD5</h3>
+<pre><code>5c883ff8539b8d04be017a51a84e3af8
+f3e0b960a48b433bc4bfe6ac44183b74
+9cbe4bd27eba8c70b6eddaeb6707659b
+cb442cbff066dfef2e3ff0c56610148f
+10D42F5465D5D8808B43619D8266BD99
+f3c06399c68c5fdf80bb2853f8f2934b
+19159280736dbe6c11b7d6a57f6bb7b9
+b5a6f78d5575a60316f4e784371d4f8c
+3c20ba851edecd28c198691321429883
+2b244a39571ab27f7bb4174d460adeef
+ae1e9b3621ee041be6ab5e12bff37c53
+00b1620f89b7980b34d53737d9e42fd3
+4d2445a43591d041cabbbf3dfca6dfbd
+</code></pre>
+<h3 id="">私有矿池</h3>
+<pre><code>45.61.187.7:7733
+</code></pre>
+<!--kg-card-end: markdown-->
+    </section>
+
+
+</article>
+</main>
+
+
+
+
+            <aside class="read-more-wrap outer">
+                <div class="read-more inner">
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/911s5/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    僵尸网络911 S5的数字遗产
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+2024年5月29日，美国司法部发布通告，声称其执法活动摧毁了&quot;史上最大的僵尸网络&quot; 911 S5，查封了相关域名，并且逮捕了其管理员YunHe Wang。Wang及其同伙通过创建并分发包含恶意代码的免费VPN程序感染用户，并且在名为911 S5的住宅代理服务中出售对被感染设备构成的代理网络的访问权。
+
+按照360威胁情报中心的分析，911S5从2014年开始运营，到2022年7月关停，在2023年10月又摇身一变，化名CloudRouter继续其肮脏生意，终于在2024年5月被多国联合执法摧毁。911S5的僵尸网络运行时间长、涉及多个国家的19M个IP地址、行为高调，虽然经过执法行动后大势已去，但是其数字遗产仍然对网络空间构成了现实且显著的威胁，下文是我们对威胁分析的结果。
+
+
+“空手套白狼”的911 S5
+
+911S5出售的代理服务背后是数千万被感染的设备。受害者主动或被动下载捆绑了恶意代码的软件、免费VPN程序等。在程序启动后，恶意代码将会创建持久化服务作为后门，为911S5客户提供代理服务。
+
+在2023年以前，911S5使用的免费VPN包括:ProxyGate、Mas</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2024-06-14">14 Jun 2024</time>
+                <span class="post-card-meta-length">7 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/headsup_xdr33_variant_of_ciahive_emeerges/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    Heads up! Xdr33, A Variant Of CIA’s HIVE  Attack Kit Emerges
+                </h2>
+            </header>
+                <div class="post-card-excerpt">Overview
+
+
+On Oct 21, 2022, 360Netlab&#39;s honeypot system captured a suspicious ELF file ee07a74d12c0bb3594965b51d0e45b6f, which propagated via F5 vulnerability with zero VT detection, our system observces that it communicates with IP 45.9.150.144 using SSL with forged Kaspersky certificates, this caught our attention. After further lookup,</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-10">10 Jan 2023</time>
+                <span class="post-card-meta-length">13 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                        
+<article class="post-card post no-image keep-ratio">
+
+
+    <div class="post-card-content">
+
+        <a class="post-card-content-link" href="/warning-hive-variant-xdr33-is-coming_cn/">
+            <header class="post-card-header">
+                <div class="post-card-tags">
+                </div>
+                <h2 class="post-card-title">
+                    警惕：魔改后的CIA攻击套件Hive进入黑灰产领域
+                </h2>
+            </header>
+                <div class="post-card-excerpt">概述
+
+
+2022年10月21日，360Netlab的蜜罐系统捕获了一个通过F5漏洞传播，VT 0检测的可疑ELF文件ee07a74d12c0bb3594965b51d0e45b6f，流量监控系统提示它和IP45.9.150.144产生了SSL流量，而且双方都使用了伪造的Kaspersky证书，这引起了我们的关注。经过分析，我们确认它由CIA被泄露的Hive项目server源码改编而来。这是我们首次捕获到在野的CIA HIVE攻击套件变种，基于其内嵌Bot端证书的CN=xdr33， 我们内部将其命名为xdr33。关于CIA的Hive项目，互联网中有大量的源码分析的文章，读者可自行参阅，此处不再展开。
+
+
+概括来说，xdr33是一个脱胎于CIA Hive项目的后门木马，主要目的是收集敏感信息，为后续的入侵提供立足点。从网络通信来看，xdr33使用XTEA或AES算法对原始流量进行加密，并采用开启了Client-Certificate Authentication模式的SSL对流量做进一步的保护；从功能来说，主要有beacon，trigger两大任务，其中beacon是周期性向硬编码的Be</div>
+        </a>
+
+        <footer class="post-card-meta">
+            <time class="post-card-meta-date" datetime="2023-01-09">09 Jan 2023</time>
+                <span class="post-card-meta-length">17 min read</span>
+        </footer>
+
+    </div>
+
+</article>
+                </div>
+            </aside>
+
+
+
+    </div>
+
+    <footer class="site-footer outer">
+        <div class="inner">
+            <section class="copyright"><a href="https://blog.netlab.360.com">360 Netlab Blog - Network Security Research Lab at 360</a> &copy; 2026</section>
+            <nav class="site-footer-nav">
+                <ul class="nav">
+    <li class="nav-sign-up"><a href="#/portal/">Sign up</a></li>
+</ul>
+
+            </nav>
+            <div class="gh-powered-by"><a href="https://ghost.org/" target="_blank" rel="noopener">Powered by Ghost</a></div>
+        </div>
+    </footer>
+
+</div>
+
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="pswp__bg"></div>
+
+    <div class="pswp__scroll-wrap">
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <div class="pswp__ui pswp__ui--hidden">
+            <div class="pswp__top-bar">
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+                <button class="pswp__button pswp__button--share" title="Share"></button>
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+                <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
+
+            <div class="pswp__caption">
+                <div class="pswp__caption__center"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script
+    src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+    crossorigin="anonymous">
+</script>
+<script src="/assets/built/casper.js?v=00a3abdcf6"></script>
+<script>
+$(document).ready(function () {
+    // Mobile Menu Trigger
+    $('.gh-burger').click(function () {
+        $('body').toggleClass('gh-head-open');
+    });
+    // FitVids - Makes video embeds responsive
+    $(".gh-content").fitVids();
+});
+</script>
+
+
+
+</body>
+</html>

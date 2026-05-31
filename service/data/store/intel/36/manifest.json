@@ -1,0 +1,15 @@
+{
+  "intelId": 36,
+  "sourceUrl": "https://blog.netlab.360.com/abcbot_an_evolving_botnet_cn/",
+  "fetchedAt": "2026-05-31T08:40:28Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "74633b9f0fb9577f88d3544ee40e7ccd4da5786072d937ce0f348de6bec3485e",
+      "sizeBytes": 38311
+    }
+  ]
+}

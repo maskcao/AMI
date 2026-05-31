@@ -1,0 +1,15 @@
+{
+  "intelId": 4,
+  "sourceUrl": "https://blog.netlab.360.com/tag/botnet/",
+  "fetchedAt": "2026-05-31T08:40:23Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "aa0938f4e475c38ebe7bc798e2cde85e5c418b5827908eff7a5f558981fc376a",
+      "sizeBytes": 50947
+    }
+  ]
+}

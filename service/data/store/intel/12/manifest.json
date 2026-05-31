@@ -1,0 +1,15 @@
+{
+  "intelId": 12,
+  "sourceUrl": "https://blog.netlab.360.com/tag/dta/",
+  "fetchedAt": "2026-05-31T08:40:25Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "c00bfbba2ec5025d0701f1f2f5f6b65b4ea017d6966b9027605dbc377e1838a6",
+      "sizeBytes": 16843
+    }
+  ]
+}

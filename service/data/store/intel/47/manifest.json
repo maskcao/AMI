@@ -1,0 +1,15 @@
+{
+  "intelId": 47,
+  "sourceUrl": "https://blog.netlab.360.com/rotajakiro_linux_version_of_oceanlotus/",
+  "fetchedAt": "2026-05-31T09:23:01Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "6ed7b35ffe46f4df95a58b1658240e19221ec26d00c1ec636492984ee714cacb",
+      "sizeBytes": 26110
+    }
+  ]
+}

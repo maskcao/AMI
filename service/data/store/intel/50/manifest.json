@@ -1,0 +1,15 @@
+{
+  "intelId": 50,
+  "sourceUrl": "https://blog.netlab.360.com/wei-xie-kuai-xun-z0miner-zheng-zai-li-yong-elasticsearch-he-jenkins-lou-dong-da-si-chuan-bo/",
+  "fetchedAt": "2026-05-31T09:23:03Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "fca5fe6724a23482404d70cc67272f301e0da674b099b0ff74a1ec82fc2d84c3",
+      "sizeBytes": 29490
+    }
+  ]
+}

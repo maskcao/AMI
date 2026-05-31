@@ -5,7 +5,9 @@ export type KnowledgeStatus = 'draft' | 'published'
 
 export interface MalwareRef {
   name: string
-  class: MalwareClass
+  /** API may send `classification`; normalized to `class` in client. */
+  class?: MalwareClass
+  classification?: string
 }
 
 export interface AttackTool {
@@ -70,8 +72,12 @@ export interface LinkedIntelBrief {
   id: number
   title: string
   sourceName: string
+  sourceUrl?: string
+  collectSourceName?: string
   disclosedAt: string | null
   role: 'primary' | 'supporting'
+  hasRaw?: boolean
+  hasParsed?: boolean
 }
 
 export interface KnowledgeDetail extends KnowledgeSummary {

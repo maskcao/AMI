@@ -5,6 +5,9 @@ import type {
 } from '@/types/settings'
 
 export const COLLECT_TYPE_LABELS: Record<string, string> = {
+  direct_url: '单 URL 直采',
+  paginated_list: '列表监测（路径分页）',
+  threat_portal: '威胁门户（列表抽链）',
   scheduled_url: '定时 URL 监测',
   wechat_feed: '微信文章采集',
   rss: 'RSS / Atom',
@@ -19,8 +22,8 @@ export const MOCK_COLLECT_SOURCES: CollectSourceSummary[] = [
   {
     id: 'cs-1',
     name: '360 Netlab 博客',
-    type: 'scheduled_url',
-    typeLabel: COLLECT_TYPE_LABELS.scheduled_url,
+    type: 'paginated_list',
+    typeLabel: COLLECT_TYPE_LABELS.paginated_list,
     enabled: true,
     scheduleCron: '0 */6 * * *',
     scheduleLabel: '每 6 小时',

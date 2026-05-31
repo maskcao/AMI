@@ -1,0 +1,15 @@
+{
+  "intelId": 22,
+  "sourceUrl": "https://blog.netlab.360.com/orchard-dga/",
+  "fetchedAt": "2026-05-31T08:40:26Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "ea474fe9a37892685d678debb1855791686bd42dd215def11edf2a22f3e6eeb2",
+      "sizeBytes": 43432
+    }
+  ]
+}

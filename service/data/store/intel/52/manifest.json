@@ -1,0 +1,15 @@
+{
+  "intelId": 52,
+  "sourceUrl": "https://blog.netlab.360.com/new_threat_zhtrap_botnet_cn/",
+  "fetchedAt": "2026-05-31T11:05:52Z",
+  "artifacts": [
+    {
+      "seq": 1,
+      "role": "html",
+      "filename": "001.html",
+      "mime": "text/html",
+      "sha256": "10047e21e057530b10459929b9d76c172d628eb37e66ef58c94a4882e77d9995",
+      "sizeBytes": 40953
+    }
+  ]
+}
