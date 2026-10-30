@@ -43,6 +43,43 @@ func TestPickIngestTitle_prefersHTML(t *testing.T) {
 	}
 }
 
+func testQianxinTitleOpts() *TitleExtractOpts {
+	return &TitleExtractOpts{
+		Rules: []TitleExtractRule{
+			{Regex: `(?is)e\.title\s*=\s*"((?:\\.|[^"\\])*)"`},
+			{Regex: `(?is)class="title-detail"[^>]*>\s*([^<]+?)(?:\s*</|\s+By\s)`},
+		},
+		Blocklist: []string{"奇安信威胁情报中心"},
+	}
+}
+
+func TestExtractTitleFromHTML_qianxinNuxt(t *testing.T) {
+	html := `<html><head><title>奇安信威胁情报中心</title></head><body>
+<div class="title-detail">金眼狗团伙近期活动跟踪</div>
+<script>window.__NUXT__=function(n,a,l,e){return e.title="金眼狗团伙近期活动跟踪",e.readableId="x"}</script>
+</body></html>`
+	got := ExtractTitleFromHTML(html, testQianxinTitleOpts())
+	want := "金眼狗团伙近期活动跟踪"
+	if got != want {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
+func TestExtractTitleFromHTML_rejectsGenericSiteTitle(t *testing.T) {
+	html := `<html><head><title>奇安信威胁情报中心</title></head><body><p>no article title</p></body></html>`
+	got := ExtractTitleFromHTML(html, testQianxinTitleOpts())
+	if got != "" {
+		t.Fatalf("expected empty, got %q", got)
+	}
+}
+
+func TestShouldRefreshIntelTitle_genericSite(t *testing.T) {
+	opts := testQianxinTitleOpts()
+	if !ShouldRefreshIntelTitle("奇安信威胁情报中心", "https://ti.qianxin.com/blog/articles/x", "真实文章标题", opts) {
+		t.Fatal("expected refresh when current is generic site title")
+	}
+}
+
 func TestShouldRefreshIntelTitle(t *testing.T) {
 	if !ShouldRefreshIntelTitle("", "https://x/a", "Real Title") {
 		t.Fatal("empty current")

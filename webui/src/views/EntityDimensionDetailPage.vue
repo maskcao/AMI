@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DIMENSION_LIST_PATH, getEntityProfile } from '@/analytics/entity-profiles'
+import { DIMENSION_LIST_PATH, getEntityProfileAsync } from '@/analytics/entity-profiles'
 import { useEntityTopologyNodes } from '@/composables/useEntityTopology'
 import AppLayout from '@/components/AppLayout.vue'
 import AttackTechniques from '@/components/AttackTechniques.vue'
@@ -36,7 +36,7 @@ const listPath = computed(() => DIMENSION_LIST_PATH[dimension.value] ?? '/analyt
 async function load() {
   loading.value = true
   try {
-    profile.value = getEntityProfile(dimension.value, route.params.entityKey as string)
+    profile.value = await getEntityProfileAsync(dimension.value, route.params.entityKey as string)
   } finally {
     loading.value = false
   }

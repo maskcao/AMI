@@ -25,7 +25,7 @@ func runDirectURL(db *store.DB, files *artifacts.Store, src *store.CollectSource
 			res.Failed++
 			continue
 		}
-		title := pipeline.PickIngestTitle(html, u, "")
+		title := pipeline.PickIngestTitle(html, u, "", cfg.TitleOpts())
 		if err := importOne(db, files, sourceName, src.Name, title, u, html, res); err != nil {
 			log.Printf("ingest direct %s: %v", u, err)
 			res.Failed++
@@ -38,6 +38,12 @@ func runDirectURL(db *store.DB, files *artifacts.Store, src *store.CollectSource
 func runListDiscover(db *store.DB, files *artifacts.Store, src *store.CollectSourceFull, cfg SourceConfig, res *RunResult) error {
 	if cfg.Pagination.Type == "scroll" {
 		return ScrollPaginationError()
+	}
+	if cfg.Pagination.Type == "wechat_album" {
+		return runWeChatAlbumList(db, files, src, cfg, res)
+	}
+	if cfg.Pagination.Type == "wordpress_ajax" {
+		return runWordPressAjaxList(db, files, src, cfg, res)
 	}
 	pageURLs := ExpandListPageURLs(cfg)
 	if len(pageURLs) == 0 {
@@ -75,27 +81,77 @@ func runListDiscover(db *store.DB, files *artifacts.Store, src *store.CollectSou
 		sleepDelay(cfg.DelayMS)
 	}
 
+	importListQueue(db, files, sourceName, src.Name, cfg, queue, res)
+	return nil
+}
+
+func runWeChatAlbumList(db *store.DB, files *artifacts.Store, src *store.CollectSourceFull, cfg SourceConfig, res *RunResult) error {
+	queue, _, err := collectWeChatAlbumLinks(cfg, 0)
+	if err != nil {
+		return err
+	}
+	if len(queue) == 0 {
+		return nil
+	}
+	queue, err = ExpandWeeklyDigestSourceLinks(cfg, queue)
+	if err != nil {
+		return err
+	}
+	sourceName := labelForSource(src)
+	importListQueue(db, files, sourceName, src.Name, cfg, queue, res)
+	return nil
+}
+
+func runWordPressAjaxList(db *store.DB, files *artifacts.Store, src *store.CollectSourceFull, cfg SourceConfig, res *RunResult) error {
+	queue, _, err := collectWordPressAjaxLinks(cfg, 0)
+	if err != nil {
+		return err
+	}
+	if len(queue) == 0 {
+		return nil
+	}
+	sourceName := labelForSource(src)
+	importListQueue(db, files, sourceName, src.Name, cfg, queue, res)
+	return nil
+}
+
+// importListQueue walks the full paginated queue. Skipped (already ingested) URLs do not
+// count toward max_items_per_run so a later run can import links from page 2+.
+func importListQueue(db *store.DB, files *artifacts.Store, sourceName, collectName string, cfg SourceConfig, queue []listLink, res *RunResult) {
 	limit := cfg.MaxItemsPerRun
 	if limit <= 0 {
 		limit = 10
 	}
-	if len(queue) > limit {
-		queue = queue[:limit]
-	}
-
+	importedNew := 0
 	for _, lk := range queue {
+		if importedNew >= limit {
+			break
+		}
+		exists, err := db.IntelExistsBySourceURL(lk.URL)
+		if err != nil {
+			res.Failed++
+			continue
+		}
+		if exists {
+			res.Skipped++
+			continue
+		}
 		html, err := fetchArticleHTML(lk.URL, cfg.TimeoutSec)
 		if err != nil {
 			res.Failed++
 			continue
 		}
-		title := pipeline.PickIngestTitle(html, lk.URL, lk.Title)
-		if err := importOne(db, files, sourceName, src.Name, title, lk.URL, html, res); err != nil {
+		title := pipeline.PickIngestTitle(html, lk.URL, lk.Title, cfg.TitleOpts())
+		before := res.Imported
+		if err := importOne(db, files, sourceName, collectName, title, lk.URL, html, res); err != nil {
 			res.Failed++
+			continue
+		}
+		if res.Imported > before {
+			importedNew++
 		}
 		sleepDelay(cfg.DelayMS)
 	}
-	return nil
 }
 
 func labelForSource(src *store.CollectSourceFull) string {

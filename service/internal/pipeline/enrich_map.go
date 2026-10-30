@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/ami/ami/service/internal/llm"
+	"github.com/ami/ami/service/internal/mitre"
 	"github.com/ami/ami/service/internal/store"
 )
 
@@ -16,8 +17,12 @@ func applyEnrichToPayload(pl store.KnowledgePayload, er *llm.EnrichResult, cves 
 		if tid == "" {
 			continue
 		}
+		tactic := mitre.TacticForTechnique(tid)
+		if tactic == "" {
+			tactic = "—"
+		}
 		pl.Techniques = appendUniqueMap(pl.Techniques, "techniqueId", tid, map[string]any{
-			"techniqueId": tid, "name": tid, "tactic": "—",
+			"techniqueId": tid, "name": tid, "tactic": tactic,
 		})
 	}
 	for _, c := range cves {
@@ -61,7 +66,7 @@ func applyEnrichToPayload(pl store.KnowledgePayload, er *llm.EnrichResult, cves 
 			cls = "other"
 		}
 		pl.Malware = appendUniqueMap(pl.Malware, "name", name, map[string]any{
-			"name": name, "classification": cls,
+			"name": name, "class": cls, "classification": cls,
 		})
 	}
 	for _, name := range er.SuggestedMalware {
@@ -70,9 +75,10 @@ func applyEnrichToPayload(pl store.KnowledgePayload, er *llm.EnrichResult, cves 
 			continue
 		}
 		pl.Malware = appendUniqueMap(pl.Malware, "name", name, map[string]any{
-			"name": name, "classification": "other",
+			"name": name, "class": "other", "classification": "other",
 		})
 	}
+	pl.ThreatActors = appendUniqueStrings(pl.ThreatActors, er.ThreatActors...)
 	if len(er.Quality.Hints) > 0 {
 		pl.QualityHints = appendUnique(pl.QualityHints, er.Quality.Hints...)
 	}

@@ -47,7 +47,7 @@ const TECHNIQUE_ZH: Record<string, string> = {
 
 export function tacticLabel(tactic: string): string {
   const t = tactic?.trim()
-  if (!t) return '—'
+  if (!t || t === '—' || t === '-') return '未分类'
   return TACTIC_ZH[t] ?? t
 }
 

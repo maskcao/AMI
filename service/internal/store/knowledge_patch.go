@@ -136,5 +136,13 @@ func (d *DB) MergeKnowledge(sourceID, targetID int64) error {
 	if err != nil {
 		return err
 	}
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	if row, err := d.GetKnowledge(targetID); err == nil && row != nil {
+		pl, _ := ParsePayload(row.PayloadJSON)
+		dups, _ := json.Marshal(d.findDupCandidates(targetID, row.Title, pl))
+		_, _ = d.Exec(`UPDATE attack_knowledge SET dup_candidates_json=? WHERE id=?`, string(dups), targetID)
+	}
+	return nil
 }

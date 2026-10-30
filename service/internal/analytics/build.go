@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"net/url"
 	"sort"
+	"strings"
 
+	"github.com/ami/ami/service/internal/malwareclass"
+	"github.com/ami/ami/service/internal/mitre"
 	"github.com/ami/ami/service/internal/store"
 )
 
@@ -28,14 +31,15 @@ type Bundle struct {
 }
 
 type kAgg struct {
-	ID         int64
-	Title      string
-	Matrix     string
-	Industries []string
-	UpdatedAt  string
-	Quality    int
-	IntelCount int
-	Payload    store.KnowledgePayload
+	ID          int64
+	Title       string
+	Matrix      string
+	Industries  []string
+	UpdatedAt   string
+	DisclosedAt string
+	Quality     int
+	IntelCount  int
+	Payload     store.KnowledgePayload
 }
 
 func asMapSlice(v any) []map[string]any {
@@ -64,7 +68,8 @@ func BuildBundle(db *store.DB) (*Bundle, error) {
 		_ = json.Unmarshal([]byte(r.TargetIndustriesJSON), &ind)
 		knowledges = append(knowledges, kAgg{
 			ID: r.ID, Title: r.Title, Matrix: r.AttackMatrix, Industries: ind,
-			UpdatedAt: r.UpdatedAt, Quality: r.QualityScore, IntelCount: r.IntelCount, Payload: pl,
+			UpdatedAt: r.UpdatedAt, DisclosedAt: r.EarliestDisclosedAt.String,
+			Quality: r.QualityScore, IntelCount: r.IntelCount, Payload: pl,
 		})
 	}
 	intelRows, _, err := db.ListIntel(store.IntelListParams{Limit: 5000})
@@ -81,17 +86,17 @@ func BuildBundle(db *store.DB) (*Bundle, error) {
 	iocs := buildIocs(db, intelRows, knowledges)
 
 	snap := map[string]any{
-		"knowledgeCount": len(knowledges),
-		"cveCount":       len(asMapSlice(cves)),
-		"malwareCount":   len(asMapSlice(malware)),
-		"actorCount":     len(asMapSlice(actors)),
-		"techniqueCount": len(asMapSlice(techniques)),
-		"toolCount":      len(asMapSlice(tools)),
-		"infraCount":     len(asMapSlice(infra)),
-		"iocCount":       len(asMapSlice(iocs)),
-		"industryDist":     nonNilSlice(countBy(flatIndustries(knowledges))),
+		"knowledgeCount":   len(knowledges),
+		"cveCount":         len(asMapSlice(cves)),
+		"malwareCount":     len(asMapSlice(malware)),
+		"actorCount":       len(asMapSlice(actors)),
+		"techniqueCount":   len(asMapSlice(techniques)),
+		"toolCount":        len(asMapSlice(tools)),
+		"infraCount":       len(asMapSlice(infra)),
+		"iocCount":         len(asMapSlice(iocs)),
+		"activeActorDist":  nonNilSlice(countActiveActorDist(knowledges, 10)),
 		"matrixDist":       nonNilSlice(countBy(mapNames(knowledges, func(k kAgg) string { return k.Matrix }))),
-		"malwareClassDist": nonNilSlice(countByFromMalware(malware)),
+		"malwareClassDist": nonNilSlice(countMalwareClassDist(knowledges)),
 		"tacticDist":       nonNilSlice(countByFromTechniques(techniques)),
 	}
 
@@ -105,12 +110,12 @@ func BuildBundle(db *store.DB) (*Bundle, error) {
 		}
 	}
 	dashboard := map[string]any{
-		"snapshot": snap,
-		"operations": ops,
-		"knowledgeRows": dashRows,
+		"snapshot":                 snap,
+		"operations":               ops,
+		"knowledgeRows":            dashRows,
 		"ransomwareKnowledgeCount": countRansomware(knowledges),
-		"icsKnowledgeCount": countICS(knowledges),
-		"inWildCveCount": inWild,
+		"icsKnowledgeCount":        countICS(knowledges),
+		"inWildCveCount":           inWild,
 	}
 
 	nav := []map[string]any{
@@ -162,12 +167,13 @@ func buildCves(knowledges []kAgg) any {
 	}
 	var out []map[string]any
 	for _, d := range m {
-		out = append(out, finalizeRow(map[string]any{
+		row := finalizeRow(map[string]any{
 			"cveId": d.cveId, "slug": entitySlug(d.cveId), "description": d.desc, "inWild": d.inWild,
 			"knowledge": d.knowledge,
-		}, d.knowledge, knowledges))
+		}, d.knowledge, knowledges)
+		out = append(out, applyRecency(row, d.knowledge, knowledges))
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i]["cveId"].(string) < out[j]["cveId"].(string) })
+	sortByRecency(out)
 	return nonNilSlice(out)
 }
 
@@ -180,7 +186,7 @@ func buildMalware(knowledges []kAgg) any {
 	for _, k := range knowledges {
 		for _, mal := range k.Payload.Malware {
 			name, _ := mal["name"].(string)
-			class, _ := mal["class"].(string)
+			class := malwareclass.ClassFromMap(mal)
 			key := name + "|" + class
 			d, ok := m[key]
 			if !ok {
@@ -286,11 +292,11 @@ func buildActorProfile(name string, knowledges []kAgg) map[string]any {
 	base["knowledge"] = refs
 	base["knowledgeCount"] = len(refs)
 	base["targetIndustries"] = keys(inds)
-	base["tools"] = tools
-	base["infrastructure"] = infra
-	base["malware"] = malware
-	base["vulnerabilities"] = vulns
-	base["techniques"] = techniques
+	base["tools"] = nonNilSlice(tools)
+	base["infrastructure"] = nonNilSlice(infra)
+	base["malware"] = nonNilSlice(malware)
+	base["vulnerabilities"] = nonNilSlice(vulns)
+	base["techniques"] = nonNilSlice(techniques)
 	base["intelReportCount"] = intelN
 	base["matrices"] = keys(matrices)
 	base["firstSeen"] = first
@@ -323,10 +329,11 @@ func buildTechniques(knowledges []kAgg) any {
 			id, _ := t["techniqueId"].(string)
 			row, ok := m[id]
 			if !ok {
+				tac := mitre.ResolveTechniqueTactic(id, stringField(t["tactic"]))
 				row = map[string]any{
 					"techniqueId": id,
 					"name":        t["name"],
-					"tactic":      t["tactic"],
+					"tactic":      tac,
 					"matrix":      k.Matrix,
 					"knowledge":   []LinkedRef{},
 				}
@@ -447,6 +454,55 @@ func buildIocs(db *store.DB, intelRows []store.IntelRow, knowledges []kAgg) any 
 	return nonNilSlice(out)
 }
 
+func latestLinked(knowledge []LinkedRef, all []kAgg, field func(kAgg) string) string {
+	byID := make(map[int64]string, len(all))
+	for _, k := range all {
+		byID[k.ID] = field(k)
+	}
+	latest := ""
+	for _, r := range knowledge {
+		if v := byID[r.KnowledgeID]; v > latest {
+			latest = v
+		}
+	}
+	return latest
+}
+
+func applyRecency(row map[string]any, knowledge []LinkedRef, all []kAgg) map[string]any {
+	row["disclosedAt"] = latestLinked(knowledge, all, func(k kAgg) string { return k.DisclosedAt })
+	row["updatedAt"] = latestLinked(knowledge, all, func(k kAgg) string { return k.UpdatedAt })
+	return row
+}
+
+func recencyKey(row map[string]any) string {
+	if d, _ := row["disclosedAt"].(string); d != "" {
+		return d
+	}
+	u, _ := row["updatedAt"].(string)
+	return u
+}
+
+func rowLabel(row map[string]any) string {
+	for _, key := range []string{"cveId", "name", "techniqueId", "value"} {
+		if v, _ := row[key].(string); v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// sortByRecency orders rows newest-disclosed first; rows without disclosedAt fall back to
+// updatedAt, and ties are broken by label for deterministic output.
+func sortByRecency(out []map[string]any) {
+	sort.Slice(out, func(i, j int) bool {
+		ki, kj := recencyKey(out[i]), recencyKey(out[j])
+		if ki != kj {
+			return ki > kj
+		}
+		return rowLabel(out[i]) < rowLabel(out[j])
+	})
+}
+
 func finalizeRow(row map[string]any, knowledge []LinkedRef, all []kAgg) map[string]any {
 	inds := map[string]struct{}{}
 	for _, r := range knowledge {
@@ -535,6 +591,51 @@ func countICS(k []kAgg) int {
 	return n
 }
 
+func countActiveActorDist(k []kAgg, limit int) []map[string]any {
+	counts := map[string]int{}
+	display := map[string]string{}
+	for _, kn := range k {
+		seen := map[string]struct{}{}
+		for _, a := range kn.Payload.ThreatActors {
+			a = strings.TrimSpace(a)
+			if a == "" {
+				continue
+			}
+			key := strings.ToLower(a)
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			if _, ok := display[key]; !ok {
+				display[key] = a
+			}
+			counts[key]++
+		}
+	}
+	type row struct {
+		name  string
+		count int
+	}
+	var rows []row
+	for key, n := range counts {
+		rows = append(rows, row{name: display[key], count: n})
+	}
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].count != rows[j].count {
+			return rows[i].count > rows[j].count
+		}
+		return rows[i].name < rows[j].name
+	})
+	if limit > 0 && len(rows) > limit {
+		rows = rows[:limit]
+	}
+	out := make([]map[string]any, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, map[string]any{"name": r.name, "count": r.count})
+	}
+	return out
+}
+
 func flatIndustries(k []kAgg) []string {
 	var out []string
 	for _, row := range k {
@@ -551,9 +652,18 @@ func mapNames(k []kAgg, fn func(kAgg) string) []string {
 	return out
 }
 
+func stringField(v any) string {
+	s, _ := v.(string)
+	return strings.TrimSpace(s)
+}
+
 func countBy(names []string) []map[string]any {
 	m := map[string]int{}
 	for _, n := range names {
+		n = strings.TrimSpace(n)
+		if n == "" || n == "—" || n == "-" {
+			n = "未分类"
+		}
 		m[n]++
 	}
 	var out []map[string]any
@@ -564,35 +674,23 @@ func countBy(names []string) []map[string]any {
 	return nonNilSlice(out)
 }
 
-func countByFromMalware(rows any) []map[string]any {
-	list := asMapSlice(rows)
+func countMalwareClassDist(knowledges []kAgg) []map[string]any {
 	var names []string
-	for _, r := range list {
-		names = append(names, classLabel(r["class"].(string)))
+	for _, k := range knowledges {
+		for _, mal := range k.Payload.Malware {
+			names = append(names, malwareclass.Label(malwareclass.ClassFromMap(mal)))
+		}
 	}
 	return countBy(names)
-}
-
-func classLabel(c string) string {
-	switch c {
-	case "ransomware":
-		return "勒索软件"
-	case "backdoor":
-		return "后门"
-	case "botnet":
-		return "僵尸网络"
-	default:
-		return c
-	}
 }
 
 func countByFromTechniques(rows any) []map[string]any {
 	list := asMapSlice(rows)
 	var names []string
 	for _, r := range list {
-		if t, ok := r["tactic"].(string); ok {
-			names = append(names, t)
-		}
+		id, _ := r["techniqueId"].(string)
+		stored, _ := r["tactic"].(string)
+		names = append(names, mitre.ResolveTechniqueTactic(id, stored))
 	}
 	return countBy(names)
 }

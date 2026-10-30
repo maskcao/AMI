@@ -86,7 +86,8 @@ function goKnowledge(id: number) {
 }
 
 function formatDisclosed(at: string | null) {
-  return at ?? '未知'
+  if (!at) return '—'
+  return at.slice(0, 16).replace('T', ' ')
 }
 
 const canRetryPipeline = computed(() => {
@@ -103,6 +104,7 @@ const pipelineStep = computed(() => {
   if (s === 'extracting') return 3
   if (s === 'succeeded') return 4
   if (s === 'failed') return detail.value?.aiExtract ? 3 : 2
+  if (s === 'stopped') return detail.value?.aiExtract ? 3 : 1
   return 0
 })
 
@@ -383,6 +385,7 @@ onMounted(load)
                   v-if="snapshotHtml"
                   :html="snapshotHtml"
                   :collected-at="detail.collectedAt"
+                  :disclosed-at="detail.disclosedAt"
                   :parse-version="detail.parseVersion"
                 />
                 <el-empty

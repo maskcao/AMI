@@ -21,6 +21,7 @@ import {
 import { invalidateAggregateCache } from '@/analytics/aggregate'
 import { getIntelById } from '@/mock/intel'
 import { computeNeedsReview } from '@/utils/knowledge-review'
+import { earliestDisclosedAt } from '@/utils/disclosed-at'
 import { collectFiguresForIntelIds } from '@/utils/intel-figures'
 
 interface RawKnowledge {
@@ -390,6 +391,7 @@ function rebuildDetail(raw: RawKnowledge): KnowledgeDetail {
     procedures: raw.procedures,
     pipeline: raw.pipeline,
     intelCount: raw.linkedIntel.length,
+    disclosedAt: earliestDisclosedAt(raw.linkedIntel),
     updatedAt: raw.updatedAt,
     dimensions: dimensionCounts(raw),
   }

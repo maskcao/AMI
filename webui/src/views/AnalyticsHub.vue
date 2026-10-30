@@ -325,9 +325,14 @@ watch(
             </el-table-column>
             <el-table-column label="分类" width="110">
               <template #default="{ row }">
-                <el-tag size="small" :type="malwareClassColor(row.class)">
+                <el-tag
+                  v-if="row.class"
+                  size="small"
+                  :type="malwareClassColor(row.class)"
+                >
                   {{ malwareClassLabel(row.class) }}
                 </el-tag>
+                <span v-else class="muted">未分类</span>
               </template>
             </el-table-column>
             <el-table-column label="攻击行业" min-width="160">

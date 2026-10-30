@@ -5,12 +5,15 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/ami/ami/service/internal/artifacts"
+	"github.com/ami/ami/service/internal/netutil"
 	"github.com/ami/ami/service/internal/store"
 )
 
@@ -19,6 +22,9 @@ var imgSrcRe = regexp.MustCompile(`(?is)<img\b[^>]*\bsrc=["']([^"']+)["']`)
 // SyncFiguresFromHTML downloads report images and registers intel_figure rows.
 func SyncFiguresFromHTML(files *artifacts.Store, db *store.DB, intelID int64, pageURL string, html []byte) error {
 	if files == nil || db == nil || len(html) == 0 {
+		return nil
+	}
+	if os.Getenv("AMI_SKIP_ASSET_ARCHIVE") == "1" {
 		return nil
 	}
 	base, _ := url.Parse(pageURL)
@@ -37,29 +43,43 @@ func SyncFiguresFromHTML(files *artifacts.Store, db *store.DB, intelID int64, pa
 		if rawSrc == "" || strings.HasPrefix(rawSrc, "data:") {
 			continue
 		}
-		abs := resolveFigureURL(base, rawSrc)
-		if abs == "" {
+		cacheKey := rawSrc
+		var body []byte
+		var mime string
+		var err error
+		if name := rawAssetName(intelID, rawSrc); name != "" {
+			cacheKey = "local:" + name
+			body, err = files.ReadRawAsset(intelID, 1, name)
+			if err != nil || len(body) < 2048 {
+				continue
+			}
+			mime = mimeFromExt(filepath.Ext(name))
+		} else {
+			abs := resolveFigureURL(base, rawSrc)
+			if abs == "" {
+				continue
+			}
+			cacheKey = abs
+			if isDecorativeImage(abs) {
+				continue
+			}
+			body, mime, err = fetchImage(client, abs)
+			if err != nil || len(body) < 2048 {
+				continue
+			}
+		}
+		if _, ok := seen[cacheKey]; ok {
 			continue
 		}
-		if isDecorativeImage(abs) {
-			continue
-		}
-		if _, ok := seen[abs]; ok {
-			continue
-		}
-		seen[abs] = struct{}{}
-		body, mime, err := fetchImage(client, abs)
-		if err != nil || len(body) < 2048 {
-			continue
-		}
-		ext := extForMime(mime, abs)
+		seen[cacheKey] = struct{}{}
+		ext := extForMime(mime, rawSrc)
 		figID := fmt.Sprintf("fig-%03d", idx+1)
 		rel, err := files.WriteFigure(intelID, "v1", figID+ext, body)
 		if err != nil {
 			continue
 		}
 		apiSrc := fmt.Sprintf("/api/v1/intel/%d/artifacts/%s", intelID, path.Base(rel))
-		title := figureTitleFromURL(abs, idx)
+		title := figureTitleFromURL(rawSrc, idx)
 		_ = db.InsertFigure(store.IntelFigure{
 			ID:      figID,
 			IntelID: intelID,
@@ -105,7 +125,7 @@ func fetchImage(client *http.Client, imgURL string) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	req.Header.Set("User-Agent", "AMI-Ingest/1.0")
+	req.Header.Set("User-Agent", netutil.DefaultUserAgent)
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, "", err
@@ -144,6 +164,33 @@ func extForMime(mime, src string) string {
 			return ext
 		}
 		return ".png"
+	}
+}
+
+func rawAssetName(intelID int64, raw string) string {
+	raw = strings.Split(raw, "?")[0]
+	prefix := fmt.Sprintf("/api/v1/intel/%d/raw-assets/", intelID)
+	if i := strings.Index(raw, prefix); i >= 0 {
+		return filepath.Base(raw[i+len(prefix):])
+	}
+	if strings.HasPrefix(raw, "/raw-assets/") {
+		return filepath.Base(raw)
+	}
+	return ""
+}
+
+func mimeFromExt(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".webp":
+		return "image/webp"
+	case ".svg":
+		return "image/svg+xml"
+	default:
+		return "image/png"
 	}
 }
 

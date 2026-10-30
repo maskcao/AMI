@@ -2,6 +2,7 @@ import { apiFetch, USE_API } from '@/api/http'
 import type { DashboardPayload } from '@/analytics/aggregate'
 import { emptyDashboardPayload, normalizeDashboardPayload } from '@/analytics/normalize'
 import type { ActorRow, CveRow, InfraRow, IocRow, MalwareRow, TechniqueRow, ToolRow } from '@/analytics/aggregate'
+import type { MalwareClass } from '@/constants/malware'
 import type { DimensionNavItem } from '@/analytics/aggregate'
 import type { ThreatActorProfile } from '@/types/threat-actor'
 
@@ -21,6 +22,14 @@ export interface AnalyticsBundle {
 let cached: AnalyticsBundle | null = null
 let hydrateError: string | null = null
 
+function normalizeMalwareRows(rows: MalwareRow[]): MalwareRow[] {
+  return rows.map((row) => {
+    const raw = row as MalwareRow & { classification?: string }
+    const cls = (row.class || raw.classification || '').trim() as MalwareClass
+    return { ...row, class: cls }
+  })
+}
+
 export function getAnalyticsHydrateError(): string | null {
   return hydrateError
 }
@@ -35,7 +44,7 @@ export async function hydrateAnalytics(force = false): Promise<void> {
       ...raw,
       dashboard: normalizeDashboardPayload(raw.dashboard ?? {}),
       cve: raw.cve ?? [],
-      malware: raw.malware ?? [],
+      malware: normalizeMalwareRows(raw.malware ?? []),
       actors: raw.actors ?? [],
       actorProfiles: raw.actorProfiles ?? {},
       techniques: raw.techniques ?? [],

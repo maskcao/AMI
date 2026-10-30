@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import IndustryTags from '@/components/IndustryTags.vue'
+import ThreatActorTags from '@/components/ThreatActorTags.vue'
 import MalwareClassTags from '@/components/MalwareClassTags.vue'
 import QualityScore from '@/components/QualityScore.vue'
+import { formatDisclosedAt } from '@/utils/disclosed-at'
 import { KNOWLEDGE_STATUS_LABELS } from '@/utils/knowledge-review'
 import type { KnowledgeStatus, KnowledgeSummary } from '@/types/knowledge'
 
@@ -24,10 +26,6 @@ const router = useRouter()
 
 function goKnowledge(id: number) {
   router.push({ name: 'knowledge-detail', params: { id: String(id) } })
-}
-
-function dimSummary(d: KnowledgeSummary['dimensions']) {
-  return `手法 ${d.techniques} · 工具 ${d.tools} · 设施 ${d.infrastructure} · 漏洞 ${d.vulnerabilities}`
 }
 
 function formatUpdatedAt(iso: string): string {
@@ -74,21 +72,27 @@ function onSortChange(data: { prop: string; order: string | null }) {
           <el-tag v-if="row.needsReview" type="warning" size="small" effect="plain" class="review-tag">
             待复核
           </el-tag>
+          <el-tag
+            v-if="row.enrichVersion === 'rules-v1'"
+            type="danger"
+            size="small"
+            effect="plain"
+            class="review-tag"
+            title="关联情报的 LLM 富集失败，当前为规则兜底结果"
+          >
+            LLM 失败
+          </el-tag>
+          <el-tag
+            v-if="row.dupCandidates?.length"
+            type="danger"
+            size="small"
+            effect="plain"
+            class="review-tag"
+            :title="`疑似重复：与 ${row.dupCandidates.length} 条知识高度相似`"
+          >
+            疑似重复
+          </el-tag>
         </div>
-      </template>
-    </el-table-column>
-    <el-table-column label="状态" width="88">
-      <template #default="{ row }">
-        <el-tag :type="row.status === 'published' ? 'success' : 'info'" size="small">
-          {{ statusLabel(row.status) }}
-        </el-tag>
-      </template>
-    </el-table-column>
-    <el-table-column label="矩阵" width="100">
-      <template #default="{ row }">
-        <el-tag :type="row.attackMatrix === 'ICS' ? 'warning' : 'primary'" size="small">
-          {{ row.attackMatrix }}
-        </el-tag>
       </template>
     </el-table-column>
     <el-table-column label="行业" width="120">
@@ -96,14 +100,30 @@ function onSortChange(data: { prop: string; order: string | null }) {
         <IndustryTags :industries="row.targetIndustries" />
       </template>
     </el-table-column>
-    <el-table-column label="恶意软件" min-width="180" show-overflow-tooltip>
+    <el-table-column label="攻击组织" min-width="160" show-overflow-tooltip>
+      <template #default="{ row }">
+        <ThreatActorTags :actors="row.threatActors ?? []" />
+      </template>
+    </el-table-column>
+    <el-table-column label="恶意软件" min-width="180" class-name="malware-cell">
       <template #default="{ row }">
         <MalwareClassTags :items="row.malware" />
       </template>
     </el-table-column>
-    <el-table-column label="知识维度" min-width="260" show-overflow-tooltip>
+    <el-table-column
+      prop="disclosedAt"
+      label="披露时间"
+      width="140"
+      sortable="custom"
+      :sort-orders="['descending', 'ascending']"
+    >
       <template #default="{ row }">
-        <span class="dim-text">{{ dimSummary(row.dimensions) }}</span>
+        <span
+          class="time-cell"
+          :title="row.disclosedAt ? '关联情报中最早的披露时间' : '暂无关联情报披露时间'"
+        >
+          {{ formatDisclosedAt(row.disclosedAt) }}
+        </span>
       </template>
     </el-table-column>
     <el-table-column
@@ -117,9 +137,11 @@ function onSortChange(data: { prop: string; order: string | null }) {
         <span class="time-cell">{{ formatUpdatedAt(row.updatedAt) }}</span>
       </template>
     </el-table-column>
-    <el-table-column prop="intelCount" label="情报" width="80" align="center" sortable="custom">
+    <el-table-column label="状态" width="88">
       <template #default="{ row }">
-        <el-badge :value="row.intelCount" />
+        <el-tag :type="row.status === 'published' ? 'success' : 'info'" size="small">
+          {{ statusLabel(row.status) }}
+        </el-tag>
       </template>
     </el-table-column>
     <el-table-column prop="qualityScore" label="质量" width="100" sortable="custom">
@@ -133,6 +155,12 @@ function onSortChange(data: { prop: string; order: string | null }) {
 <style scoped>
 .knowledge-table {
   width: 100%;
+}
+.knowledge-table :deep(.malware-cell .cell) {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.5;
+  align-items: flex-start;
 }
 .title-cell {
   display: flex;
@@ -155,10 +183,6 @@ function onSortChange(data: { prop: string; order: string | null }) {
 .title-cell .is-untitled {
   color: var(--el-text-color-secondary);
   font-style: italic;
-}
-.dim-text {
-  font-size: 12px;
-  color: #606266;
 }
 .time-cell {
   font-size: 12px;

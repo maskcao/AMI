@@ -11,6 +11,27 @@ func TestTitlesMatch(t *testing.T) {
 	}
 }
 
+func TestShouldMergeByTitle_rejectsGenericSite(t *testing.T) {
+	if ShouldMergeByTitle("奇安信威胁情报中心") {
+		t.Fatal("generic site title must not merge")
+	}
+	if !ShouldMergeByTitle("金眼狗团伙近期活动跟踪") {
+		t.Fatal("real article title should merge")
+	}
+}
+
+func TestFindKnowledgeID_skipsGenericTitle(t *testing.T) {
+	prior := []struct {
+		Title        string
+		KnowledgeIDs []int64
+	}{
+		{"奇安信威胁情报中心", []int64{147}},
+	}
+	if got := FindKnowledgeID("奇安信威胁情报中心", prior); got != 0 {
+		t.Fatalf("expected no merge, got %d", got)
+	}
+}
+
 func TestFindKnowledgeID(t *testing.T) {
 	prior := []struct {
 		Title        string

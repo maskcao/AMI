@@ -7,10 +7,17 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/ami/ami/service/internal/netutil"
 )
 
 func fetchArticleHTML(rawURL string, timeoutSec int) ([]byte, error) {
 	return httpGet(rawURL, timeoutSec)
+}
+
+// FetchArticleHTML downloads a page body for repair/re-archive jobs.
+func FetchArticleHTML(rawURL string, timeoutSec int) ([]byte, error) {
+	return fetchArticleHTML(rawURL, timeoutSec)
 }
 
 func resolveURL(base *url.URL, href string) string {
@@ -36,7 +43,11 @@ func httpGet(url string, timeoutSec int) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", "AMI-Ingest/1.0")
+	ua := netutil.DefaultUserAgent
+	if strings.Contains(strings.ToLower(url), "mp.weixin.qq.com") {
+		ua = netutil.WeChatUserAgent
+	}
+	req.Header.Set("User-Agent", ua)
 	client := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
 	res, err := client.Do(req)
 	if err != nil {
@@ -47,5 +58,9 @@ func httpGet(url string, timeoutSec int) ([]byte, error) {
 		return nil, fmt.Errorf("GET %s: %d", url, res.StatusCode)
 	}
 	const maxBody = 8 << 20
-	return io.ReadAll(io.LimitReader(res.Body, maxBody))
+	return readLimitedBody(res.Body, maxBody)
+}
+
+func readLimitedBody(r io.Reader, max int64) ([]byte, error) {
+	return io.ReadAll(io.LimitReader(r, max))
 }

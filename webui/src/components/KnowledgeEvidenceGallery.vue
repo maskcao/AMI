@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiUrl } from '@/api/http'
 import type { IntelFigure } from '@/types/intel'
 import { INTEL_FIGURE_KIND_LABELS } from '@/utils/intel-figures'
 
@@ -10,7 +11,13 @@ const props = defineProps<{
 
 const router = useRouter()
 
-const previewList = computed(() => props.figures.map((f) => f.src))
+function figureSrc(src: string): string {
+  if (!src) return src
+  if (src.startsWith('/api/')) return apiUrl(src)
+  return src
+}
+
+const previewList = computed(() => props.figures.map((f) => figureSrc(f.src)))
 
 function kindLabel(kind: IntelFigure['kind']): string {
   return INTEL_FIGURE_KIND_LABELS[kind]
@@ -31,7 +38,7 @@ function goIntel(id: number) {
       <figure v-for="item in figures" :key="item.id" class="figure-card">
         <div class="figure-media">
           <el-image
-            :src="item.src"
+            :src="figureSrc(item.src)"
             :alt="item.title"
             fit="contain"
             class="figure-img"

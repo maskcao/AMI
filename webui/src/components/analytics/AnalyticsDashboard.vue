@@ -2,13 +2,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { DashboardPayload } from '@/analytics/aggregate'
-import { buildDashboardPayload } from '@/analytics/aggregate'
+import { buildActorRows, buildCveRows, buildDashboardPayload } from '@/analytics/aggregate'
 import { getAnalyticsHydrateError, hydrateAnalytics, loadDashboardPayload } from '@/api/analytics'
 import { USE_API } from '@/api/http'
 import { tacticLabel } from '@/constants/mitre-zh'
 import SimpleBarChart from '@/components/analytics/SimpleBarChart.vue'
 import StatCard from '@/components/analytics/StatCard.vue'
-import QualityScore from '@/components/QualityScore.vue'
 
 const router = useRouter()
 const loading = ref(USE_API)
@@ -17,13 +16,32 @@ const dashboard = ref<DashboardPayload | null>(null)
 
 const ops = () => dashboard.value?.operations
 
-const recentKnowledgeRows = computed(() => (dashboard.value?.knowledgeRows ?? []).slice(0, 10))
-
 const tacticDistZh = computed(() =>
   (dashboard.value?.snapshot.tacticDist ?? []).map((item) => ({
     ...item,
     name: tacticLabel(item.name),
   })),
+)
+
+/** Top 10 threat actors by linked knowledge count. */
+const topActiveActorDist = computed(() => {
+  const snap = dashboard.value?.snapshot.activeActorDist
+  if (snap?.length) return snap
+  return buildActorRows()
+    .map((a) => ({ name: a.name, count: a.knowledgeCount }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'))
+    .slice(0, 10)
+})
+
+/** In-the-wild CVEs ranked by linked knowledge count (dashboard card). */
+const topInWildCveRows = computed(() =>
+  buildCveRows()
+    .filter((c) => c.inWild)
+    .sort(
+      (a, b) =>
+        b.knowledgeCount - a.knowledgeCount || a.cveId.localeCompare(b.cveId),
+    )
+    .slice(0, 10),
 )
 
 onMounted(async () => {
@@ -56,16 +74,12 @@ async function retry() {
   }
 }
 
-function goKnowledgeList() {
-  router.push({ name: 'knowledge-list' })
-}
-
-function goKnowledge(id: number) {
-  router.push({ name: 'knowledge-detail', params: { id: String(id) } })
-}
-
 function goVulnExploit() {
   router.push({ path: '/analytics/cve' })
+}
+
+function goCveDetail(slug: string) {
+  router.push({ name: 'entity-dimension-detail', params: { dimension: 'cve', entityKey: slug } })
 }
 </script>
 
@@ -140,17 +154,9 @@ function goVulnExploit() {
       <el-row :gutter="16" class="chart-row">
         <el-col :span="12">
           <el-card shadow="never" class="chart-card">
-            <template #header>
-              <div class="table-header">
-                <span>漏洞利用（在野）</span>
-                <el-button text type="primary" @click="goVulnExploit">查看列表</el-button>
-              </div>
-            </template>
-            <p class="vuln-stat-line">
-              登记 <strong>{{ dashboard.snapshot.cveCount }}</strong> 个 CVE，其中
-              <strong class="in-wild">{{ dashboard.inWildCveCount }}</strong>
-              个关联知识标记为在野利用
-            </p>
+            <template #header>活跃攻击组织 Top 10</template>
+            <SimpleBarChart v-if="topActiveActorDist.length" :items="topActiveActorDist" />
+            <el-empty v-else description="暂无攻击组织数据" :image-size="56" />
           </el-card>
         </el-col>
         <el-col :span="12">
@@ -166,8 +172,41 @@ function goVulnExploit() {
       <el-row :gutter="16" class="chart-row">
         <el-col :span="12">
           <el-card shadow="never" class="chart-card">
-            <template #header>攻击行业分布</template>
-            <SimpleBarChart :items="dashboard.snapshot.industryDist" />
+            <template #header>
+              <div class="table-header">
+                <span>漏洞利用（在野）</span>
+                <el-button text type="primary" @click="goVulnExploit">查看列表</el-button>
+              </div>
+            </template>
+            <el-table
+              v-if="topInWildCveRows.length"
+              :data="topInWildCveRows"
+              stripe
+              size="small"
+              class="cve-top-table"
+            >
+              <el-table-column label="CVE" width="148">
+                <template #default="{ row }">
+                  <el-link type="primary" @click="goCveDetail(row.slug)">{{ row.cveId }}</el-link>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="description"
+                label="描述"
+                min-width="120"
+                show-overflow-tooltip
+              />
+              <el-table-column label="关联知识" width="88" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" round effect="plain" type="danger">{{ row.knowledgeCount }}</el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-empty
+              v-else
+              description="暂无在野 CVE"
+              :image-size="56"
+            />
           </el-card>
         </el-col>
         <el-col :span="12">
@@ -176,43 +215,7 @@ function goVulnExploit() {
             <SimpleBarChart :items="tacticDistZh" />
           </el-card>
         </el-col>
-        <el-col :span="12">
-          <el-card shadow="never" class="chart-card">
-            <template #header>Enterprise / ICS 矩阵</template>
-            <SimpleBarChart :items="dashboard.snapshot.matrixDist" />
-          </el-card>
-        </el-col>
       </el-row>
-
-      <el-card shadow="never" class="chart-card activity-card">
-        <template #header>
-          <div class="table-header">
-            <span>最近更新的攻击知识（Top 10）</span>
-            <el-button text type="primary" @click="goKnowledgeList">查看全部</el-button>
-          </div>
-        </template>
-        <el-table :data="recentKnowledgeRows" stripe size="small">
-          <el-table-column prop="id" label="ID" width="64" />
-          <el-table-column label="标题" min-width="280">
-            <template #default="{ row }">
-              <el-link type="primary" @click="goKnowledge(row.id)">{{ row.title }}</el-link>
-              <el-tag v-if="row.hasRansomware" size="small" type="danger" class="row-tag">
-                勒索
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="attackMatrix" label="矩阵" width="100" />
-          <el-table-column label="挂载情报" width="88" align="center">
-            <template #default="{ row }">{{ row.intelCount }}</template>
-          </el-table-column>
-          <el-table-column label="质量" width="120">
-            <template #default="{ row }">
-              <QualityScore :score="row.qualityScore" />
-            </template>
-          </el-table-column>
-          <el-table-column prop="updatedAt" label="更新时间" width="120" />
-        </el-table>
-      </el-card>
     </template>
   </div>
 </template>
@@ -275,9 +278,6 @@ function goVulnExploit() {
   background: var(--ami-surface) !important;
   height: 100%;
 }
-.activity-card {
-  margin-top: 4px;
-}
 .card-tag {
   margin-left: 8px;
 }
@@ -287,21 +287,10 @@ function goVulnExploit() {
   justify-content: space-between;
   width: 100%;
 }
-.row-tag {
-  margin-left: 8px;
-  vertical-align: middle;
-}
 .click-tag {
   cursor: pointer;
 }
-.vuln-stat-line {
-  margin: 0;
-  padding: 8px 4px 16px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: #606266;
-}
-.in-wild {
-  color: #f56c6c;
+.cve-top-table {
+  width: 100%;
 }
 </style>

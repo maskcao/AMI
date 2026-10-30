@@ -2,6 +2,7 @@
 defineProps<{
   html: string
   collectedAt: string
+  disclosedAt?: string | null
   parseVersion: string
 }>()
 </script>
@@ -9,6 +10,9 @@ defineProps<{
 <template>
   <div class="original-panel">
     <el-descriptions :column="2" border size="small" class="meta">
+      <el-descriptions-item label="披露时间">
+        {{ disclosedAt ? disclosedAt.slice(0, 16).replace('T', ' ') : '—' }}
+      </el-descriptions-item>
       <el-descriptions-item label="采集时间">{{ collectedAt }}</el-descriptions-item>
       <el-descriptions-item label="解析版本">{{ parseVersion }}</el-descriptions-item>
     </el-descriptions>

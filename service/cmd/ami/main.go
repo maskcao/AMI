@@ -50,6 +50,9 @@ func main() {
 	}
 
 	worker := &pipeline.Worker{DB: db, Files: files}
+	if err := db.ReclaimStaleJobs(); err != nil {
+		log.Printf("reclaim stale jobs: %v", err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go worker.Run(ctx, time.Duration(config.WorkerIntervalSec())*time.Second)

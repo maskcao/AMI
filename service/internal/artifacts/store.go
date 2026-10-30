@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -117,6 +118,30 @@ func (s *Store) ReadParsedText(dataDir string, relPath string) ([]byte, error) {
 		return nil, os.ErrNotExist
 	}
 	return os.ReadFile(filepath.Join(dataDir, relPath))
+}
+
+func (s *Store) IncidentDir(id int64) string {
+	return filepath.Join(s.root, "incident", fmt.Sprintf("%d", id))
+}
+
+func (s *Store) WriteIncidentFile(id int64, filename string, data []byte) (relPath string, err error) {
+	dir := s.IncidentDir(id)
+	if err = os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	abs := filepath.Join(dir, filepath.Base(filename))
+	if err = os.WriteFile(abs, data, 0o644); err != nil {
+		return "", err
+	}
+	return filepath.ToSlash(filepath.Join("incident", fmt.Sprintf("%d", id), filepath.Base(filename))), nil
+}
+
+func (s *Store) ReadIncidentFile(relPath string) ([]byte, error) {
+	clean := filepath.Clean("/" + relPath)
+	if strings.Contains(clean, "..") {
+		return nil, os.ErrNotExist
+	}
+	return os.ReadFile(filepath.Join(s.root, clean))
 }
 
 func (s *Store) FigurePath(intelID int64, version, filename string) string {

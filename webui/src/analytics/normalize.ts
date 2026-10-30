@@ -1,8 +1,18 @@
 import type { CountItem, DashboardOperationalStats, DashboardPayload } from '@/analytics/aggregate'
 
+function sanitizeCountLabel(name: unknown): string {
+  const n = typeof name === 'string' ? name.trim() : ''
+  if (!n || n === '—' || n === '-') return '未分类'
+  return n
+}
+
 function countItems(v: unknown): CountItem[] {
   if (!Array.isArray(v)) return []
-  return v as CountItem[]
+  return (v as CountItem[]).map((item) => ({
+    ...item,
+    name: sanitizeCountLabel(item.name),
+    count: Number(item.count) || 0,
+  }))
 }
 
 export function emptyDashboardPayload(): DashboardPayload {
@@ -16,6 +26,7 @@ export function emptyDashboardPayload(): DashboardPayload {
     infraCount: 0,
     iocCount: 0,
     industryDist: [] as CountItem[],
+    activeActorDist: [] as CountItem[],
     matrixDist: [] as CountItem[],
     malwareClassDist: [] as CountItem[],
     tacticDist: [] as CountItem[],
@@ -56,6 +67,7 @@ export function normalizeDashboardPayload(raw: Partial<DashboardPayload>): Dashb
       infraCount: Number(snap.infraCount ?? 0),
       iocCount: Number(snap.iocCount ?? 0),
       industryDist: countItems(snap.industryDist),
+      activeActorDist: countItems(snap.activeActorDist),
       matrixDist: countItems(snap.matrixDist),
       malwareClassDist: countItems(snap.malwareClassDist),
       tacticDist: countItems(snap.tacticDist),

@@ -226,7 +226,7 @@ func (s *Server) runCollectSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	opslog.Info("api", "manual collect run", "sourceId="+id)
-	res, err := ingest.RunCollectSource(s.DB, s.Files, id)
+	res, err := ingest.RunCollectSourceWithGate(s.DB, s.Files, id)
 	out := map[string]any{"sourceId": id}
 	if res != nil {
 		out["imported"] = res.Imported
@@ -235,7 +235,7 @@ func (s *Server) runCollectSource(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		out["error"] = err.Error()
-		writeJSON(w, http.StatusOK, out)
+		writeJSON(w, http.StatusBadRequest, out)
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -312,12 +312,38 @@ func (s *Server) deleteParserProfile(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func collectSourcePilotReady(r store.CollectSourceFull) bool {
+	if !r.BatchUnlocked {
+		return false
+	}
+	if !r.PilotArticlePassedAt.Valid || strings.TrimSpace(r.PilotArticlePassedAt.String) == "" {
+		return false
+	}
+	if ingest.TypeNeedsListPilot(r.Type) {
+		if !r.PilotListPassedAt.Valid || strings.TrimSpace(r.PilotListPassedAt.String) == "" {
+			return false
+		}
+	}
+	return true
+}
+
 func collectSourceJSON(r store.CollectSourceFull) map[string]any {
 	m := map[string]any{
 		"id": r.ID, "name": r.Name, "type": r.Type,
 		"typeLabel": collectTypeLabels[r.Type],
 		"enabled": r.Enabled, "sourceLabel": r.SourceLabel,
 		"config": json.RawMessage(r.ConfigJSON),
+		"batchUnlocked": r.BatchUnlocked,
+		"needsListPilot": ingest.TypeNeedsListPilot(r.Type),
+	}
+	if r.PilotArticlePassedAt.Valid {
+		m["pilotArticlePassedAt"] = r.PilotArticlePassedAt.String
+	}
+	if r.PilotListPassedAt.Valid {
+		m["pilotListPassedAt"] = r.PilotListPassedAt.String
+	}
+	if collectSourcePilotReady(r) {
+		m["pilotReady"] = true
 	}
 	if r.ScheduleCron.Valid {
 		m["scheduleCron"] = r.ScheduleCron.String

@@ -52,6 +52,13 @@ export interface KnowledgeDimensionCounts {
   malware: number
 }
 
+export interface KnowledgeDupCandidate {
+  id: number
+  title: string
+  score: number
+  reasons: string[]
+}
+
 export interface KnowledgeSummary {
   id: number
   title: string
@@ -64,6 +71,12 @@ export interface KnowledgeSummary {
   threatActors: string[]
   qualityScore: number
   intelCount: number
+  /** Earliest disclosed_at among linked intel reports. */
+  disclosedAt: string | null
+  /** Enrichment provenance of latest linked intel: "rules-v1" means LLM fallback. API only. */
+  enrichVersion?: string | null
+  /** Suspected duplicate knowledge entries computed at write/scan time. API only. */
+  dupCandidates?: KnowledgeDupCandidate[]
   updatedAt: string
   dimensions: KnowledgeDimensionCounts
 }
@@ -93,7 +106,7 @@ export interface KnowledgeDetail extends KnowledgeSummary {
   evidenceFigures: IntelFigure[]
 }
 
-export type KnowledgeReviewFilter = 'all' | 'needs_review' | 'draft' | 'published'
+export type KnowledgeReviewFilter = 'all' | 'needs_review' | 'draft' | 'published' | 'llm_failed'
 
 export interface KnowledgeListParams {
   industries?: string[]

@@ -13,35 +13,49 @@ import {
   Reading,
   Tickets,
   Tools,
+  Warning,
 } from '@element-plus/icons-vue'
 import NavGroup from '@/components/NavGroup.vue'
+import { useSidebarNav } from '@/composables/useSidebarNav'
 import { THREAT_LIB_NAV_ITEMS } from '@/constants/threat-lib-nav'
 
 const route = useRoute()
 const router = useRouter()
 
-const threatLibOpen = ref(false)
-const dataCenterOpen = ref(false)
-const settingsOpen = ref(false)
+const { threatLibOpen, icsOpen, dataCenterOpen, settingsOpen } = useSidebarNav()
 const threatGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
+const icsGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
 const dataCenterGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
 const settingsGroupRef = ref<InstanceType<typeof NavGroup> | null>(null)
 
 watch(
   () => route.path,
   (path) => {
-    threatLibOpen.value = path.startsWith('/analytics/')
-    dataCenterOpen.value = path.startsWith('/datacenter')
-    settingsOpen.value = path.startsWith('/settings')
-    if (path.startsWith('/analytics/')) threatGroupRef.value?.mountSubmenu()
-    if (path.startsWith('/datacenter')) dataCenterGroupRef.value?.mountSubmenu()
-    if (path.startsWith('/settings')) settingsGroupRef.value?.mountSubmenu()
+    const inDataCenter = path.startsWith('/datacenter') && !path.startsWith('/datacenter/reports')
+    // 只自动展开路由所属分组，不收起用户手动展开的其他分组
+    if (path.startsWith('/analytics/')) {
+      threatLibOpen.value = true
+      threatGroupRef.value?.mountSubmenu()
+    } else if (path.startsWith('/datacenter/reports')) {
+      icsOpen.value = true
+      icsGroupRef.value?.mountSubmenu()
+    } else if (inDataCenter) {
+      dataCenterOpen.value = true
+      dataCenterGroupRef.value?.mountSubmenu()
+    } else if (path.startsWith('/settings')) {
+      settingsOpen.value = true
+      settingsGroupRef.value?.mountSubmenu()
+    }
   },
   { immediate: true },
 )
 
 function toggleThreatLib() {
   threatLibOpen.value = !threatLibOpen.value
+}
+
+function toggleIcs() {
+  icsOpen.value = !icsOpen.value
 }
 
 function toggleDataCenter() {
@@ -61,9 +75,14 @@ const ingestQueueNav = { path: '/intel', label: '采集队列', icon: markRaw(Li
 
 const groupIcons = {
   threat: markRaw(Collection),
+  ics: markRaw(Warning),
   dataCenter: markRaw(FolderOpened),
   settings: markRaw(Tools),
 }
+
+const icsChildren: { path: string; label: string; icon: Component }[] = [
+  { path: '/datacenter/reports', label: '安全事件报告', icon: markRaw(Document) },
+]
 
 const dataCenterChildren: { path: string; label: string; icon: Component }[] = [
   { path: '/datacenter/logs', label: '运行日志', icon: markRaw(Tickets) },
@@ -94,6 +113,8 @@ const activeThreatDim = computed(() => {
   return dim && dim !== 'overview' ? `/analytics/${dim}` : ''
 })
 
+const activeIcsPath = computed(() => (route.path.startsWith('/datacenter/reports') ? '/datacenter/reports' : ''))
+
 const activeDataCenterPath = computed(() => {
   if (route.path.startsWith('/datacenter/logs')) return '/datacenter/logs'
   return ''
@@ -109,7 +130,10 @@ const activeSettingsPath = computed(() => {
 })
 
 const threatLibGroupActive = computed(() => route.path.startsWith('/analytics/'))
-const dataCenterGroupActive = computed(() => route.path.startsWith('/datacenter'))
+const icsGroupActive = computed(() => route.path.startsWith('/datacenter/reports'))
+const dataCenterGroupActive = computed(
+  () => route.path.startsWith('/datacenter') && !route.path.startsWith('/datacenter/reports'),
+)
 const settingsGroupActive = computed(() => route.path.startsWith('/settings'))
 
 function go(path: string) {
@@ -122,6 +146,7 @@ function isTopActive(path: string) {
 
 function primeSubmenus() {
   threatGroupRef.value?.mountSubmenu()
+  icsGroupRef.value?.mountSubmenu()
   dataCenterGroupRef.value?.mountSubmenu()
   settingsGroupRef.value?.mountSubmenu()
 }
@@ -136,6 +161,7 @@ onMounted(() => {
     void import('@/views/AnalyticsHub.vue')
     void import('@/views/settings/SettingsCollectPage.vue')
     void import('@/views/datacenter/RuntimeLogPage.vue')
+    void import('@/views/datacenter/IncidentReportPage.vue')
   })
 })
 </script>
@@ -178,6 +204,27 @@ onMounted(() => {
           class="nav-sub-item"
           :class="{ active: activeThreatDim === `/analytics/${child.key}` }"
           @click="go(`/analytics/${child.key}`)"
+        >
+          <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
+          <span class="sub-label">{{ child.label }}</span>
+        </button>
+      </NavGroup>
+
+      <NavGroup
+        ref="icsGroupRef"
+        label="工控安全事件"
+        :icon="groupIcons.ics"
+        :open="icsOpen"
+        :active="icsGroupActive"
+        @toggle="toggleIcs"
+      >
+        <button
+          v-for="child in icsChildren"
+          :key="child.path"
+          type="button"
+          class="nav-sub-item"
+          :class="{ active: activeIcsPath === child.path }"
+          @click="go(child.path)"
         >
           <el-icon class="sub-icon"><component :is="child.icon" /></el-icon>
           <span class="sub-label">{{ child.label }}</span>

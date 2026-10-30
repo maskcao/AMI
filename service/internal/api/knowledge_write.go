@@ -128,6 +128,7 @@ func (s *Server) buildKnowledgeDetail(row store.KnowledgeRow) map[string]any {
 			"lastIntelTitle":    ir.Title,
 			"knowledgeAction":   ir.KnowledgeAction,
 			"extractConfidence": conf,
+			"enrichVersion":     nullStrJSON(ir.EnrichVersion),
 			"pipelinedAt":       ir.UpdatedAt,
 		}
 	} else {

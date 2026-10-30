@@ -3,11 +3,12 @@ import { onMounted, ref, watch } from 'vue'
 import { includesQuery, usePagedFilter } from '@/composables/usePagedFilter'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listIntel, retryIntel } from '@/api/intel'
+import { listIntel, retryIntel, stopIntel, stopIntelBatch } from '@/api/intel'
 import AppLayout from '@/components/AppLayout.vue'
 import FilterCard from '@/components/FilterCard.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import PageShell from '@/components/PageShell.vue'
+import ThreatActorTags from '@/components/ThreatActorTags.vue'
 import WorkbenchHelp from '@/components/WorkbenchHelp.vue'
 import {
   INGEST_STATUS_LABELS,
@@ -25,6 +26,9 @@ const filterSource = ref('')
 const filterStatus = ref<IngestStatus | ''>('')
 const searchQ = ref('')
 const retryingId = ref<number | null>(null)
+const stoppingId = ref<number | null>(null)
+const batchStopping = ref(false)
+const selectedIds = ref<number[]>([])
 
 const listPager = usePagedFilter(() => items.value, {
   pageSize: 10,
@@ -37,6 +41,7 @@ const listPager = usePagedFilter(() => items.value, {
       row.collectSourceName,
       String(row.id),
       INGEST_STATUS_LABELS[row.ingestStatus],
+      ...(row.threatActors ?? []),
     ),
 })
 
@@ -46,7 +51,7 @@ const sourceOptions = [
 ]
 
 const statusOptions = (
-  ['queued', 'parsing', 'extracting', 'succeeded', 'failed'] as IngestStatus[]
+  ['queued', 'parsing', 'extracting', 'succeeded', 'failed', 'stopped'] as IngestStatus[]
 ).map((value) => ({ value, label: INGEST_STATUS_LABELS[value] }))
 
 async function load() {
@@ -57,6 +62,7 @@ async function load() {
       ingestStatus: filterStatus.value || undefined,
     })
     items.value = result.items
+    selectedIds.value = []
   } finally {
     loading.value = false
   }
@@ -64,6 +70,11 @@ async function load() {
 
 function formatCollected(at: string) {
   return at ? at.slice(0, 16).replace('T', ' ') : '—'
+}
+
+function formatDisclosed(at: string | null | undefined) {
+  if (!at) return '—'
+  return at.slice(0, 16).replace('T', ' ')
 }
 
 function formatConfidence(v: number | null) {
@@ -80,6 +91,16 @@ function ingestStatusLabel(status: IngestStatus): string {
   return INGEST_STATUS_LABELS[status]
 }
 
+function statusText(row: IntelSummary): string {
+  if (row.stopRequested && isRunningRow(row)) return '停止中'
+  return ingestStatusLabel(row.ingestStatus)
+}
+
+function statusTagType(row: IntelSummary): '' | 'success' | 'warning' | 'danger' | 'info' {
+  if (row.stopRequested && isRunningRow(row)) return 'danger'
+  return ingestStatusTagType(row.ingestStatus)
+}
+
 function knowledgeActionLabel(action: KnowledgeLinkAction): string {
   return KNOWLEDGE_ACTION_LABELS[action]
 }
@@ -89,12 +110,104 @@ function goDetail(row: IntelSummary) {
   void router.push({ name: 'intel-detail', params: { id: String(row.id) } })
 }
 
-function onRowClick(row: IntelSummary) {
+function onRowClick(row: IntelSummary, column?: { type?: string }) {
+  if (column?.type === 'selection') return
   goDetail(row)
+}
+
+function onSelectionChange(rows: IntelSummary[]) {
+  selectedIds.value = rows.map((r) => r.id)
 }
 
 function canRetryRow(row: IntelSummary) {
   return row.ingestStatus !== 'parsing' && row.ingestStatus !== 'extracting'
+}
+
+function canStopRow(row: IntelSummary) {
+  return (
+    row.ingestStatus === 'queued' ||
+    row.ingestStatus === 'parsing' ||
+    row.ingestStatus === 'extracting'
+  )
+}
+
+function isRunningRow(row: IntelSummary) {
+  return row.ingestStatus === 'parsing' || row.ingestStatus === 'extracting'
+}
+
+async function confirmStopRow(row: IntelSummary) {
+  const running = isRunningRow(row)
+  try {
+    await ElMessageBox.confirm(
+      running
+        ? `停止情报 #${row.id}？当前${row.ingestStatus === 'parsing' ? '解析' : '抽取'}阶段会先跑完，之后不再继续。`
+        : `停止情报 #${row.id} 的排队任务？停止后不会继续解析与抽取，可通过“重试”重新入队。`,
+      '停止确认',
+      { type: 'warning', confirmButtonText: '停止', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  stoppingId.value = row.id
+  try {
+    const outcome = await stopIntel(row.id)
+    if (outcome === 'stopping') {
+      ElMessage.success('已请求停止，当前阶段结束后生效')
+    } else if (outcome === 'skipped') {
+      ElMessage.info('任务已结束，无需停止')
+    } else {
+      ElMessage.success('已停止')
+    }
+    await load()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '停止失败')
+  } finally {
+    stoppingId.value = null
+  }
+}
+
+async function runBatchStop(payload: { ids?: number[]; scope?: 'queued' | 'active' }, label: string) {
+  batchStopping.value = true
+  try {
+    const res = await stopIntelBatch(payload)
+    const parts = [`${label}：已停止 ${res.stopped} 个`]
+    if (res.stopping > 0) parts.push(`${res.stopping} 个运行中任务将在当前阶段结束后停止`)
+    if (res.skipped > 0) parts.push(`跳过 ${res.skipped} 个`)
+    if (res.failed > 0) parts.push(`失败 ${res.failed} 个`)
+    ElMessage.success(parts.join('，'))
+    await load()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '批量停止失败')
+  } finally {
+    batchStopping.value = false
+  }
+}
+
+async function confirmStopSelected() {
+  if (selectedIds.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `停止选中的 ${selectedIds.value.length} 个任务？排队中的立即停止，运行中的会在当前阶段结束后停止。`,
+      '批量停止确认',
+      { type: 'warning', confirmButtonText: '停止', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  await runBatchStop({ ids: selectedIds.value }, '停止选中')
+}
+
+async function confirmStopQueued() {
+  try {
+    await ElMessageBox.confirm(
+      '停止当前所有排队中的任务？运行中的任务不受影响，可再逐个选中停止。',
+      '批量停止确认',
+      { type: 'warning', confirmButtonText: '全部停止', cancelButtonText: '取消' },
+    )
+  } catch {
+    return
+  }
+  await runBatchStop({ scope: 'queued' }, '停止全部排队中')
 }
 
 async function confirmRetryRow(row: IntelSummary) {
@@ -166,6 +279,22 @@ onMounted(search)
       </FilterCard>
 
       <el-card shadow="never" v-loading="loading" class="table-card">
+        <div v-if="listPager.total.value > 0" class="queue-toolbar">
+          <span class="toolbar-hint">已选 {{ selectedIds.length }} 项</span>
+          <div class="toolbar-actions">
+            <el-button
+              size="small"
+              :disabled="selectedIds.length === 0"
+              :loading="batchStopping"
+              @click="confirmStopSelected"
+            >
+              停止选中
+            </el-button>
+            <el-button size="small" type="danger" plain :loading="batchStopping" @click="confirmStopQueued">
+              停止全部排队中
+            </el-button>
+          </div>
+        </div>
         <el-table
           v-if="listPager.total.value > 0"
           :data="listPager.pageData.value"
@@ -173,7 +302,9 @@ onMounted(search)
           size="small"
           class="intel-table"
           @row-click="onRowClick"
+          @selection-change="onSelectionChange"
         >
+          <el-table-column type="selection" width="44" :selectable="canStopRow" />
           <el-table-column prop="id" label="ID" width="72">
             <template #default="{ row }">
               <span class="id-link">#{{ row.id }}</span>
@@ -204,13 +335,25 @@ onMounted(search)
               <span v-else class="muted">—</span>
             </template>
           </el-table-column>
+          <el-table-column label="攻击组织" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <ThreatActorTags :actors="row.threatActors ?? []" />
+            </template>
+          </el-table-column>
+          <el-table-column label="披露时间" width="140">
+            <template #default="{ row }">
+              <span :title="row.disclosedAt ? undefined : '未解析到文章披露时间'">
+                {{ formatDisclosed(row.disclosedAt) }}
+              </span>
+            </template>
+          </el-table-column>
           <el-table-column label="采集时间" width="140">
             <template #default="{ row }">{{ formatCollected(row.collectedAt) }}</template>
           </el-table-column>
           <el-table-column label="处理状态" width="108">
             <template #default="{ row }">
-              <el-tag :type="ingestStatusTagType(row.ingestStatus)" size="small" effect="light" round>
-                {{ ingestStatusLabel(row.ingestStatus) }}
+              <el-tag :type="statusTagType(row)" size="small" effect="light" round>
+                {{ statusText(row) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -238,10 +381,20 @@ onMounted(search)
           <el-table-column label="抽取置信" width="88" align="center">
             <template #default="{ row }">{{ formatConfidence(row.extractConfidence) }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="88" fixed="right" align="center">
+          <el-table-column label="操作" width="120" fixed="right" align="center">
             <template #default="{ row }">
               <el-button
-                v-if="canRetryRow(row)"
+                v-if="canStopRow(row)"
+                size="small"
+                type="danger"
+                plain
+                :loading="stoppingId === row.id"
+                @click.stop="confirmStopRow(row)"
+              >
+                停止
+              </el-button>
+              <el-button
+                v-else-if="canRetryRow(row)"
                 size="small"
                 type="warning"
                 plain
@@ -276,6 +429,21 @@ onMounted(search)
 <style scoped>
 .table-card {
   background: var(--ami-surface) !important;
+}
+.queue-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.toolbar-hint {
+  font-size: 12px;
+  color: var(--ami-text-secondary);
+}
+.toolbar-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 .intel-table :deep(.el-table__row) {
   cursor: pointer;

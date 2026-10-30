@@ -9,10 +9,11 @@ import type {
   CollectSourceSummary,
   ModelProviderSummary,
   ParserProfileSummary,
+  PilotQualityCheck,
 } from '@/types/settings'
 
 export interface CollectSourcePagination {
-  type?: 'none' | 'path' | 'scroll'
+  type?: 'none' | 'path' | 'scroll' | 'wordpress_ajax'
   path_template?: string
   start_page?: number
   max_pages?: number
@@ -26,6 +27,11 @@ export interface CollectSourceLinkExtract {
   prefer_path_regex?: string
 }
 
+/** Per-source HTML title regex rules (evaluated before &lt;title&gt;). */
+export interface CollectSourceTitleExtractRule {
+  regex: string
+}
+
 export interface CollectSourceConfig {
   article_urls?: string[]
   feed_url?: string
@@ -35,6 +41,8 @@ export interface CollectSourceConfig {
   article_base?: string
   link_extract?: CollectSourceLinkExtract
   pagination?: CollectSourcePagination
+  title_extract?: CollectSourceTitleExtractRule[]
+  title_blocklist?: string[]
   max_items_per_run?: number
   timeout_sec?: number
   delay_ms?: number
@@ -111,6 +119,54 @@ export async function runCollectSource(id: string): Promise<CollectRunResult> {
   return apiFetch<CollectRunResult>(`/api/v1/settings/collect-sources/${encodeURIComponent(id)}/run`, {
     method: 'POST',
   })
+}
+
+export interface CollectArticlePilotResult {
+  passed: boolean
+  intelId: number
+  sourceUrl: string
+  imported: boolean
+  reprocessed: boolean
+  ingestStatus: string
+  checks: PilotQualityCheck[]
+  collectSource: CollectSourceDetail
+}
+
+export interface CollectListPilotResult {
+  passed: boolean
+  skipped?: boolean
+  message?: string
+  pageUrlsScanned?: number
+  linkCount?: number
+  sampleUrls?: string[]
+  collectSource: CollectSourceDetail
+}
+
+export async function testCollectArticle(
+  id: string,
+  body?: { url?: string; waitPipeline?: boolean },
+): Promise<CollectArticlePilotResult> {
+  return apiFetch<CollectArticlePilotResult>(
+    `/api/v1/settings/collect-sources/${encodeURIComponent(id)}/test/article`,
+    { method: 'POST', body: JSON.stringify(body ?? { waitPipeline: true }) },
+  )
+}
+
+export async function testCollectList(
+  id: string,
+  body?: { maxPages?: number },
+): Promise<CollectListPilotResult> {
+  return apiFetch<CollectListPilotResult>(
+    `/api/v1/settings/collect-sources/${encodeURIComponent(id)}/test/list`,
+    { method: 'POST', body: JSON.stringify(body ?? {}) },
+  )
+}
+
+export async function unlockCollectBatch(id: string): Promise<{ ok: boolean; collectSource: CollectSourceDetail }> {
+  return apiFetch<{ ok: boolean; collectSource: CollectSourceDetail }>(
+    `/api/v1/settings/collect-sources/${encodeURIComponent(id)}/unlock-batch`,
+    { method: 'POST' },
+  )
 }
 
 export async function deleteCollectSource(id: string): Promise<void> {

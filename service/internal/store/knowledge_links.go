@@ -1,6 +1,10 @@
 package store
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+)
 
 type LinkedIntelBrief struct {
 	ID                int64          `json:"id"`
@@ -69,4 +73,68 @@ func (d *DB) FiguresForKnowledge(knowledgeID int64) ([]IntelFigure, error) {
 	}
 	defer rows.Close()
 	return scanFigures(rows)
+}
+
+// ThreatActorsByIntelIDs returns deduplicated threat actor names from linked attack knowledge payloads.
+func (d *DB) ThreatActorsByIntelIDs(intelIDs []int64) (map[int64][]string, error) {
+	out := make(map[int64][]string, len(intelIDs))
+	if len(intelIDs) == 0 {
+		return out, nil
+	}
+	args := make([]any, len(intelIDs))
+	for i, id := range intelIDs {
+		args[i] = id
+	}
+	q := fmt.Sprintf(`
+		SELECT kil.intel_id, ak.payload_json
+		FROM knowledge_intel_link kil
+		JOIN attack_knowledge ak ON ak.id = kil.knowledge_id
+		WHERE kil.intel_id IN (%s)`, inClause(len(intelIDs)))
+	rows, err := d.Query(q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	type bucket struct {
+		order []string
+		seen  map[string]struct{}
+	}
+	buckets := map[int64]*bucket{}
+	for rows.Next() {
+		var intelID int64
+		var payloadJSON string
+		if err := rows.Scan(&intelID, &payloadJSON); err != nil {
+			return nil, err
+		}
+		pl, err := ParsePayload(payloadJSON)
+		if err != nil {
+			continue
+		}
+		b := buckets[intelID]
+		if b == nil {
+			b = &bucket{seen: map[string]struct{}{}}
+			buckets[intelID] = b
+		}
+		for _, name := range pl.ThreatActors {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			key := strings.ToLower(name)
+			if _, ok := b.seen[key]; ok {
+				continue
+			}
+			b.seen[key] = struct{}{}
+			b.order = append(b.order, name)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for id, b := range buckets {
+		if len(b.order) > 0 {
+			out[id] = b.order
+		}
+	}
+	return out, nil
 }

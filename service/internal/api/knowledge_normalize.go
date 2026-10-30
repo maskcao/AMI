@@ -1,6 +1,10 @@
 package api
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/ami/ami/service/internal/malwareclass"
+)
 
 func normalizeMalwarePayload(items []map[string]any) []map[string]any {
 	if len(items) == 0 {
@@ -13,12 +17,7 @@ func normalizeMalwarePayload(items []map[string]any) []map[string]any {
 		if name == "" {
 			continue
 		}
-		cls, _ := m["class"].(string)
-		if strings.TrimSpace(cls) == "" {
-			if c2, ok := m["classification"].(string); ok {
-				cls = strings.TrimSpace(c2)
-			}
-		}
+		cls := malwareclass.ClassFromMap(m)
 		row := map[string]any{"name": name}
 		if cls != "" {
 			row["class"] = cls

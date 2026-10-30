@@ -95,6 +95,11 @@ const router = createRouter({
       name: 'datacenter-logs',
       component: () => import('@/views/datacenter/RuntimeLogPage.vue'),
     },
+    {
+      path: '/datacenter/reports',
+      name: 'datacenter-reports',
+      component: () => import('@/views/datacenter/IncidentReportPage.vue'),
+    },
   ],
 })
 

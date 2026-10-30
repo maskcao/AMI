@@ -28,6 +28,7 @@ type IntelRow struct {
 	HasRaw             bool
 	HasParsed          bool
 	AIExtractJSON      sql.NullString
+	StopRequested      bool
 }
 
 type IntelIOC struct {
@@ -104,6 +105,15 @@ func (d *DB) UpdateIntelTitle(id int64, title string) error {
 		return nil
 	}
 	_, err := d.Exec(`UPDATE intel_report SET title=?, updated_at=? WHERE id=?`, truncate(title, 512), nowRFC(), id)
+	return err
+}
+
+func (d *DB) UpdateIntelDisclosedAt(id int64, disclosedAt string) error {
+	disclosedAt = strings.TrimSpace(disclosedAt)
+	if disclosedAt == "" {
+		return nil
+	}
+	_, err := d.Exec(`UPDATE intel_report SET disclosed_at=?, updated_at=? WHERE id=?`, disclosedAt, nowRFC(), id)
 	return err
 }
 
@@ -205,7 +215,7 @@ func (d *DB) ListIntel(p IntelListParams) ([]IntelRow, int, error) {
 	}
 	q := fmt.Sprintf(`SELECT id, title, source_url, source_name, collect_source_name, disclosed_at, collected_at, updated_at,
 		summary_snippet, body_preview, ingest_status, knowledge_action, extract_confidence, pipeline_error,
-		parse_version, enrich_version, has_raw, has_parsed, ai_extract_json
+		parse_version, enrich_version, has_raw, has_parsed, ai_extract_json, stop_requested
 		FROM intel_report %s ORDER BY updated_at %s LIMIT ? OFFSET ?`, where, order)
 	args = append(args, p.Limit, p.Offset)
 	rows, err := d.Query(q, args...)
@@ -227,7 +237,7 @@ func (d *DB) ListIntel(p IntelListParams) ([]IntelRow, int, error) {
 func (d *DB) GetIntel(id int64) (*IntelRow, error) {
 	row := d.QueryRow(`SELECT id, title, source_url, source_name, collect_source_name, disclosed_at, collected_at, updated_at,
 		summary_snippet, body_preview, ingest_status, knowledge_action, extract_confidence, pipeline_error,
-		parse_version, enrich_version, has_raw, has_parsed, ai_extract_json FROM intel_report WHERE id=?`, id)
+		parse_version, enrich_version, has_raw, has_parsed, ai_extract_json, stop_requested FROM intel_report WHERE id=?`, id)
 	r, err := scanIntelRow(row)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -237,26 +247,30 @@ func (d *DB) GetIntel(id int64) (*IntelRow, error) {
 
 func scanIntel(rows *sql.Rows) (IntelRow, error) {
 	var r IntelRow
-	var hasRaw, hasParsed int
+	var hasRaw, hasParsed, stopReq int
 	err := rows.Scan(&r.ID, &r.Title, &r.SourceURL, &r.SourceName, &r.CollectSourceName, &r.DisclosedAt,
 		&r.CollectedAt, &r.UpdatedAt, &r.SummarySnippet, &r.BodyPreview, &r.IngestStatus, &r.KnowledgeAction,
-		&r.ExtractConfidence, &r.PipelineError, &r.ParseVersion, &r.EnrichVersion, &hasRaw, &hasParsed, &r.AIExtractJSON)
+		&r.ExtractConfidence, &r.PipelineError, &r.ParseVersion, &r.EnrichVersion, &hasRaw, &hasParsed, &r.AIExtractJSON,
+		&stopReq)
 	r.HasRaw = hasRaw == 1
 	r.HasParsed = hasParsed == 1
+	r.StopRequested = stopReq == 1
 	return r, err
 }
 
 func scanIntelRow(row *sql.Row) (*IntelRow, error) {
 	var r IntelRow
-	var hasRaw, hasParsed int
+	var hasRaw, hasParsed, stopReq int
 	err := row.Scan(&r.ID, &r.Title, &r.SourceURL, &r.SourceName, &r.CollectSourceName, &r.DisclosedAt,
 		&r.CollectedAt, &r.UpdatedAt, &r.SummarySnippet, &r.BodyPreview, &r.IngestStatus, &r.KnowledgeAction,
-		&r.ExtractConfidence, &r.PipelineError, &r.ParseVersion, &r.EnrichVersion, &hasRaw, &hasParsed, &r.AIExtractJSON)
+		&r.ExtractConfidence, &r.PipelineError, &r.ParseVersion, &r.EnrichVersion, &hasRaw, &hasParsed, &r.AIExtractJSON,
+		&stopReq)
 	if err != nil {
 		return nil, err
 	}
 	r.HasRaw = hasRaw == 1
 	r.HasParsed = hasParsed == 1
+	r.StopRequested = stopReq == 1
 	return &r, nil
 }
 

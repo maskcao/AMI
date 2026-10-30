@@ -6,6 +6,7 @@ export const INGEST_STATUS_LABELS: Record<IngestStatus, string> = {
   extracting: 'AI 抽取中',
   succeeded: '已完成',
   failed: '失败',
+  stopped: '已停止',
   archived: '已归档',
 }
 
@@ -20,6 +21,6 @@ export function ingestStatusTagType(status: IngestStatus): '' | 'success' | 'war
   if (status === 'succeeded') return 'success'
   if (status === 'failed') return 'danger'
   if (status === 'extracting' || status === 'parsing') return 'warning'
-  if (status === 'queued') return 'info'
+  if (status === 'queued' || status === 'stopped') return 'info'
   return 'info'
 }

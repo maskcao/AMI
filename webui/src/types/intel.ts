@@ -34,6 +34,7 @@ export type IngestStatus =
   | 'extracting'
   | 'succeeded'
   | 'failed'
+  | 'stopped'
   | 'archived'
 
 export type KnowledgeLinkAction = 'created' | 'updated' | 'skipped' | 'pending'
@@ -52,7 +53,9 @@ export interface IntelSummary {
   knowledgeAction: KnowledgeLinkAction
   extractConfidence: number | null
   iocCount: number
+  threatActors: string[]
   pipelineError?: string
+  stopRequested?: boolean
 }
 
 export interface IntelAiExtractPreview {

@@ -1,4 +1,7 @@
 import type { LinkedKnowledgeRef } from '@/analytics/actors'
+import { getAnalyticsBundle, hydrateAnalytics } from '@/api/analytics'
+import { getKnowledge } from '@/api/knowledge'
+import { USE_API } from '@/api/http'
 import { KNOWLEDGE_DETAILS } from '@/mock/knowledge'
 import type { EntityDimensionKind, EntityDimensionProfile } from '@/types/entity-profile'
 import type { KnowledgeDetail } from '@/types/knowledge'
@@ -69,7 +72,7 @@ function collectIndustries(knowledge: KnowledgeDetail[]): string[] {
   return [...set].sort((a, b) => a.localeCompare(b, 'zh-CN'))
 }
 
-function buildProfileFromKnowledge(
+export function buildProfileFromKnowledge(
   dimension: EntityDimensionKind,
   title: string,
   subtitle: string,
@@ -201,6 +204,73 @@ export function getEntityProfile(
     default:
       return null
   }
+}
+
+export async function getEntityProfileAsync(
+  dimension: EntityDimensionKind,
+  entityKey: string,
+): Promise<EntityDimensionProfile | null> {
+  if (!USE_API) return getEntityProfile(dimension, entityKey)
+
+  await hydrateAnalytics()
+  const bundle = getAnalyticsBundle()
+  if (!bundle) return null
+
+  const decoded = entityKeyDecode(entityKey)
+  let row: { knowledge: LinkedKnowledgeRef[] } | undefined
+  let title = decoded
+  let subtitle = ''
+  let extra: Partial<EntityDimensionProfile> = {}
+
+  switch (dimension) {
+    case 'cve': {
+      const r = bundle.cve.find((x) => x.slug === entityKey || x.cveId === decoded)
+      if (!r) return null
+      row = r
+      title = r.cveId
+      subtitle = '漏洞利用'
+      extra = { cveId: r.cveId, inWild: r.inWild, ...(r.description ? { summary: r.description } : {}) }
+      break
+    }
+    case 'malware': {
+      const [name, cls] = decoded.split('|')
+      const r = bundle.malware.find((x) => x.slug === entityKey || (x.name === name && x.class === cls))
+      if (!r) return null
+      row = r
+      title = r.name
+      subtitle = '恶意软件'
+      extra = { malwareClass: r.class }
+      break
+    }
+    case 'tool': {
+      const r = bundle.tools.find((x) => x.slug === entityKey || x.name === decoded)
+      if (!r) return null
+      row = r
+      title = r.name
+      subtitle = '攻击工具'
+      extra = { toolCategory: r.category }
+      break
+    }
+    case 'infra': {
+      const [type, ...rest] = decoded.split('|')
+      const value = rest.join('|')
+      const r = bundle.infra.find((x) => x.slug === entityKey || (x.type === type && x.value === value))
+      if (!r) return null
+      row = r
+      title = r.value
+      subtitle = `${r.type.toUpperCase()} · 基础设施`
+      extra = { infraType: r.type, infraRole: r.role }
+      break
+    }
+    default:
+      return null
+  }
+
+  const linked = (
+    await Promise.all(row.knowledge.map((kref) => getKnowledge(kref.knowledgeId)))
+  ).filter((k): k is KnowledgeDetail => !!k)
+
+  return buildProfileFromKnowledge(dimension, title, subtitle, entityKey, linked, extra)
 }
 
 export const DIMENSION_LIST_PATH: Record<EntityDimensionKind, string> = {

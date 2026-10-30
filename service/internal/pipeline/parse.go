@@ -36,31 +36,51 @@ func Snippet(text string, max int) string {
 var cveRe = regexp.MustCompile(`CVE-\d{4}-\d+`)
 
 // ExtractTitleFromHTML picks article title from structured fields, not list-card anchor text.
-func ExtractTitleFromHTML(html string) string {
+// Optional opts adds per-source regex rules and blocklist (see title_extract in collect_source config).
+func ExtractTitleFromHTML(html string, opts ...*TitleExtractOpts) string {
+	var o *TitleExtractOpts
+	if len(opts) > 0 {
+		o = opts[0]
+	}
+	bl := o.blocklist()
+
+	try := func(t string) string {
+		t = cleanTitle(t)
+		if isPlausibleWithBlocklist(t, bl) {
+			return t
+		}
+		return ""
+	}
+
 	for _, re := range []*regexp.Regexp{ogTitleContentFirst, ogTitlePropertyLast} {
 		if m := re.FindStringSubmatch(html); len(m) > 1 {
-			if t := cleanTitle(m[1]); IsPlausibleTitle(t) {
+			if t := try(m[1]); t != "" {
 				return t
 			}
 		}
 	}
 	if m := jsonHeadlineRe.FindStringSubmatch(html); len(m) > 1 {
-		if t := cleanTitle(unescapeJSONString(m[1])); IsPlausibleTitle(t) {
+		if t := try(unescapeJSONString(m[1])); t != "" {
 			return t
 		}
 	}
 	if m := ghostPostTitleH1.FindStringSubmatch(html); len(m) > 1 {
-		if t := cleanTitle(m[1]); IsPlausibleTitle(t) {
+		if t := try(m[1]); t != "" {
+			return t
+		}
+	}
+	if o != nil && len(o.Rules) > 0 {
+		if t := ExtractTitleFromRules(html, o.Rules, bl); t != "" {
 			return t
 		}
 	}
 	if m := titleTagRe.FindStringSubmatch(html); len(m) > 1 {
-		if t := cleanTitle(m[1]); IsPlausibleTitle(t) {
+		if t := try(m[1]); t != "" {
 			return t
 		}
 	}
 	if m := h1TagRe.FindStringSubmatch(html); len(m) > 1 {
-		if t := cleanTitle(m[1]); IsPlausibleTitle(t) {
+		if t := try(m[1]); t != "" {
 			return t
 		}
 	}
@@ -152,12 +172,14 @@ func TitleFromURL(rawURL string) string {
 }
 
 // PickIngestTitle prefers HTML title over list-page anchor text.
-func PickIngestTitle(html []byte, pageURL, listHint string) string {
-	if t := ExtractTitleFromHTML(string(html)); t != "" {
+func PickIngestTitle(html []byte, pageURL, listHint string, opts ...*TitleExtractOpts) string {
+	o := TitleOptsForURL(pageURL, firstTitleOpts(opts))
+	if t := ExtractTitleFromHTML(string(html), o); t != "" {
 		return t
 	}
+	bl := o.blocklist()
 	hint := NormalizeTitle(listHint)
-	if IsPlausibleTitle(hint) {
+	if isPlausibleWithBlocklist(hint, bl) {
 		return hint
 	}
 	if t := TitleFromURL(pageURL); t != "" {
@@ -167,13 +189,15 @@ func PickIngestTitle(html []byte, pageURL, listHint string) string {
 }
 
 // ResolveIntelTitle fixes bad titles before knowledge write.
-func ResolveIntelTitle(current, sourceURL string, html []byte) string {
+func ResolveIntelTitle(current, sourceURL string, html []byte, opts ...*TitleExtractOpts) string {
+	o := TitleOptsForURL(sourceURL, firstTitleOpts(opts))
+	bl := o.blocklist()
 	cur := NormalizeTitle(current)
-	if IsPlausibleTitle(cur) {
+	if isPlausibleWithBlocklist(cur, bl) {
 		return cur
 	}
 	if len(html) > 0 {
-		if t := ExtractTitleFromHTML(string(html)); t != "" {
+		if t := ExtractTitleFromHTML(string(html), o); t != "" {
 			return t
 		}
 	}
@@ -187,13 +211,18 @@ func ResolveIntelTitle(current, sourceURL string, html []byte) string {
 }
 
 // ShouldRefreshIntelTitle returns true when HTML title should replace ingest placeholder.
-func ShouldRefreshIntelTitle(current, sourceURL, fromHTML string) bool {
+func ShouldRefreshIntelTitle(current, sourceURL, fromHTML string, opts ...*TitleExtractOpts) bool {
+	o := TitleOptsForURL(sourceURL, firstTitleOpts(opts))
+	bl := o.blocklist()
 	fromHTML = NormalizeTitle(fromHTML)
-	if !IsPlausibleTitle(fromHTML) {
+	if !isPlausibleWithBlocklist(fromHTML, bl) {
 		return false
 	}
 	cur := NormalizeTitle(current)
-	if !IsPlausibleTitle(cur) {
+	if !isPlausibleWithBlocklist(cur, bl) {
+		return true
+	}
+	if isBlockedTitle(cur, bl) {
 		return true
 	}
 	if sourceURL != "" && cur == sourceURL {
@@ -206,6 +235,13 @@ func ShouldRefreshIntelTitle(current, sourceURL, fromHTML string) bool {
 		return true
 	}
 	return false
+}
+
+func firstTitleOpts(opts []*TitleExtractOpts) *TitleExtractOpts {
+	if len(opts) > 0 {
+		return opts[0]
+	}
+	return nil
 }
 
 func ExtractCVEs(text string) []string {

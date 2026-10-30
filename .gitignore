@@ -1,0 +1,14 @@
+# Runtime data (SQLite DB + archived intel artifacts)
+service/data/
+
+# Dependencies
+webui/node_modules/
+
+# Go build output
+service/bin/
+
+# OS
+.DS_Store
+
+# Logs
+*.log

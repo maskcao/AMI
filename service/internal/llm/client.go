@@ -33,6 +33,7 @@ type EnrichResult struct {
 	SuggestedCves       []string
 	SuggestedTechniques []string
 	SuggestedMalware    []string
+	ThreatActors        []string
 	Tools               []ToolEntry
 	Infrastructure      []InfraEntry
 	Malware             []MalwareEntry
@@ -100,12 +101,14 @@ Required schema:
   "cves": ["CVE-YYYY-NNNN"],
   "techniques": ["T1234"],
   "malware": [{"name":"...", "classification":"botnet|ransomware|backdoor|trojan|worm|miner|apt|other"}],
+  "threatActors": ["APT-Q-36", "Lazarus group"],
   "tools": [{"name":"...", "role":"optional short role"}],
   "infrastructure": [{"type":"domain|ip|url|c2", "value":"..."}]
 }
 
 Rules:
 - Use empty arrays when unknown; do not invent CVEs or technique IDs.
+- threatActors: named attack groups explicitly attributed in the article (e.g. APT-Q-14, Lazarus, Patchwork). Prefer APT-Q-NN / UTG-Q-NN when stated. Do not list victim organizations or generic "APT组织" without a specific name.
 - techniques must be MITRE ATT&CK IDs like T1059 or T1059.001.
 - malware.classification must be one of the enum values above.
 - infrastructure.value must be concrete indicators from the text.
@@ -168,6 +171,7 @@ Rules:
 		Techniques       []string       `json:"techniques"`
 		Malware          []MalwareEntry `json:"malware"`
 		MalwareLegacy    []string       `json:"malware_names"`
+		ThreatActors     []string       `json:"threatActors"`
 		Tools            []ToolEntry    `json:"tools"`
 		Infrastructure   []InfraEntry   `json:"infrastructure"`
 	}
@@ -185,12 +189,31 @@ Rules:
 		SuggestedCves:       raw.Cves,
 		SuggestedTechniques: raw.Techniques,
 		SuggestedMalware:    malwareNames,
+		ThreatActors:        normalizeThreatActorList(raw.ThreatActors),
 		Tools:               raw.Tools,
 		Infrastructure:      raw.Infrastructure,
 		Malware:             raw.Malware,
 	}
 	er.Quality = ValidateEnrich(er)
 	return er, nil
+}
+
+func normalizeThreatActorList(in []string) []string {
+	seen := map[string]struct{}{}
+	var out []string
+	for _, a := range in {
+		a = strings.TrimSpace(a)
+		if a == "" || a == "—" || a == "-" {
+			continue
+		}
+		key := strings.ToLower(a)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, a)
+	}
+	return out
 }
 
 func normalizeBaseURL(p *store.ModelProviderRow) string {

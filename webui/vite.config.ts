@@ -16,6 +16,8 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true,
+        // Preserve public Host (e.g. 192.168.x.x:5173) for snapshot asset URL rewriting on API.
+        xfwd: true,
       },
     },
   },

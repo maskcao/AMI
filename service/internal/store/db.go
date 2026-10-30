@@ -48,7 +48,7 @@ func Open(dataDir string) (*DB, error) {
 func (d *DB) DataDir() string { return d.dataDir }
 
 func (d *DB) tune() error {
-	_, err := d.Exec(`PRAGMA synchronous=NORMAL; PRAGMA cache_size=-64000;`)
+	_, err := d.Exec(`PRAGMA synchronous=NORMAL; PRAGMA cache_size=-64000; PRAGMA busy_timeout=5000;`)
 	return err
 }
 

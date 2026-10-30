@@ -25,6 +25,19 @@ export interface CollectSourceSummary {
   sourceLabel: string
   lastRunAt: string | null
   lastStatus: CollectRunStatus
+  /** Full batch run allowed after pilot tests + unlock. */
+  batchUnlocked?: boolean
+  needsListPilot?: boolean
+  pilotArticlePassedAt?: string
+  pilotListPassedAt?: string
+  pilotReady?: boolean
+}
+
+export interface PilotQualityCheck {
+  id: string
+  label: string
+  ok: boolean
+  detail?: string
 }
 
 export type ModelProviderKind = 'llm' | 'embedding'

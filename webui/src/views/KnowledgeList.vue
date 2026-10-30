@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePagedFilter } from '@/composables/usePagedFilter'
-import { listKnowledge } from '@/api/knowledge'
+import { listKnowledge, retryLLMFailed } from '@/api/knowledge'
 import AppLayout from '@/components/AppLayout.vue'
 import FilterCard from '@/components/FilterCard.vue'
 import KnowledgeCards from '@/components/KnowledgeCards.vue'
@@ -18,6 +19,7 @@ import type { MalwareClass } from '@/constants/malware'
 const loading = ref(false)
 const items = ref<KnowledgeSummary[]>([])
 const needsReviewCount = ref(0)
+const retrying = ref(false)
 const filterIndustries = ref<string[]>([])
 const filterMatrix = ref<AttackMatrix | ''>('')
 const filterMalwareClass = ref<MalwareClass | ''>('')
@@ -32,6 +34,7 @@ const tableSort = ref<KnowledgeTableSort>({
 const reviewOptions: { label: string; value: KnowledgeReviewFilter }[] = [
   { label: '全部', value: 'all' },
   { label: '待复核', value: 'needs_review' },
+  { label: 'LLM 失败', value: 'llm_failed' },
   { label: '草稿', value: 'draft' },
   { label: '已发布', value: 'published' },
 ]
@@ -45,10 +48,16 @@ const sortedItems = computed(() => {
     switch (prop) {
       case 'id':
         return (a.id - b.id) * dir
-      case 'intelCount':
-        return (a.intelCount - b.intelCount) * dir
       case 'qualityScore':
         return (a.qualityScore - b.qualityScore) * dir
+      case 'disclosedAt': {
+        const av = a.disclosedAt ?? ''
+        const bv = b.disclosedAt ?? ''
+        if (!av && !bv) return 0
+        if (!av) return 1
+        if (!bv) return -1
+        return av.localeCompare(bv) * dir
+      }
       case 'updatedAt':
       default:
         return a.updatedAt.localeCompare(b.updatedAt) * dir
@@ -70,6 +79,42 @@ async function load() {
     needsReviewCount.value = result.needsReviewCount
   } finally {
     loading.value = false
+  }
+}
+
+function reset() {
+  searchQ.value = ''
+  filterReview.value = 'all'
+  filterMalwareClass.value = ''
+  filterMatrix.value = ''
+  filterIndustries.value = []
+  void load()
+}
+
+async function onRetryLLMFailed() {
+  try {
+    await ElMessageBox.confirm(
+      '将为所有 LLM 富集失败的情报重新排队抽取，每条会消耗一次 LLM 调用，量大时耗时较长。单次最多处理 200 条，可多次点击分批完成。',
+      '重跑 LLM 失败条目',
+      { confirmButtonText: '开始重跑', cancelButtonText: '取消', type: 'warning' },
+    )
+  } catch {
+    return
+  }
+  retrying.value = true
+  try {
+    const res = await retryLLMFailed(200)
+    if (!res) {
+      ElMessage.error('重跑请求失败')
+      return
+    }
+    if (res.requeued > 0) {
+      ElMessage.success(`已重新排队 ${res.requeued} 条，剩余 ${res.remaining} 条`)
+    } else {
+      ElMessage.info('没有待重跑的 LLM 失败条目')
+    }
+  } finally {
+    retrying.value = false
   }
 }
 
@@ -102,13 +147,14 @@ onMounted(load)
           <el-tag v-if="needsReviewCount > 0" type="warning" effect="plain">
             {{ needsReviewCount }} 条待复核
           </el-tag>
+          <el-button :loading="retrying" @click="onRetryLLMFailed">重跑 LLM 失败</el-button>
         </template>
       </PageHeader>
       <WorkbenchHelp mode="knowledge" />
 
       <FilterCard>
-        <el-form class="knowledge-filter" label-width="96px" @submit.prevent="load">
-          <div class="filter-row">
+        <el-form class="knowledge-filter" label-width="112px" @submit.prevent="load">
+          <div class="filter-grid">
             <el-form-item label="关键词" class="field-keyword">
               <el-input
                 v-model="searchQ"
@@ -116,7 +162,7 @@ onMounted(load)
                 placeholder="标题 / 概述 / CVE / Technique ID"
               />
             </el-form-item>
-            <el-form-item label="复核范围">
+            <el-form-item label="复核范围" class="field-mid">
               <el-select v-model="filterReview" placeholder="全部">
                 <el-option
                   v-for="opt in reviewOptions"
@@ -126,19 +172,17 @@ onMounted(load)
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="恶意软件分类">
+            <el-form-item label="恶意软件分类" class="field-mid">
               <el-select v-model="filterMalwareClass" clearable placeholder="全部">
                 <el-option v-for="c in MALWARE_CLASSES" :key="c.value" :label="c.label" :value="c.value" />
               </el-select>
             </el-form-item>
-            <el-form-item label="ATT&CK">
+            <el-form-item label="ATT&CK" class="field-mid">
               <el-select v-model="filterMatrix" clearable placeholder="全部">
                 <el-option label="Enterprise" value="Enterprise" />
                 <el-option label="ICS" value="ICS" />
               </el-select>
             </el-form-item>
-          </div>
-          <div class="filter-row filter-row--actions">
             <el-form-item label="攻击行业" class="field-industry">
               <el-select
                 v-model="filterIndustries"
@@ -151,8 +195,9 @@ onMounted(load)
                 <el-option v-for="ind in ALL_INDUSTRIES" :key="ind" :label="ind" :value="ind" />
               </el-select>
             </el-form-item>
-            <el-form-item label=" " class="field-actions">
+            <el-form-item class="field-actions">
               <div class="action-buttons">
+                <el-button @click="reset">重置</el-button>
                 <el-button type="primary" @click="load">查询</el-button>
               </div>
             </el-form-item>
@@ -191,47 +236,75 @@ onMounted(load)
   margin-bottom: 0;
 }
 
-.filter-row {
-  display: grid;
-  grid-template-columns: minmax(220px, 2fr) repeat(3, minmax(120px, 1fr));
-  gap: 12px 16px;
-  align-items: start;
+.knowledge-filter :deep(.el-form-item__label) {
+  white-space: nowrap;
 }
 
-.filter-row--actions {
-  margin-top: 12px;
-  grid-template-columns: minmax(280px, 2fr) 1fr;
+.filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.field-keyword {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.field-mid {
+  flex: 0 0 auto;
+}
+
+.field-industry {
+  flex: 1 1 280px;
+  min-width: 0;
 }
 
 .field-keyword :deep(.el-input),
+.field-mid :deep(.el-select),
 .field-industry :deep(.el-select) {
   width: 100%;
 }
 
-.filter-row :deep(.el-select) {
-  width: 100%;
+.field-mid :deep(.el-select) {
+  width: 140px;
 }
 
-.field-actions :deep(.el-form-item__label) {
-  visibility: hidden;
+.field-actions {
+  flex: 0 0 auto;
+  min-width: 0;
+  margin-left: auto;
 }
 
 .action-buttons {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
+}
+
+.field-actions {
+  max-width: 100%;
 }
 
 @media (max-width: 1100px) {
-  .filter-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .field-actions {
+    margin-left: 0;
   }
-  .filter-row--actions {
-    grid-template-columns: 1fr;
+}
+
+@media (max-width: 640px) {
+  .knowledge-filter :deep(.el-form-item) {
+    display: block;
   }
-  .action-buttons {
-    justify-content: flex-start;
+  .knowledge-filter :deep(.el-form-item__label) {
+    display: block;
+    width: auto !important;
+    text-align: left;
+  }
+  .field-keyword,
+  .field-mid {
+    flex: 1 1 100%;
   }
 }
 

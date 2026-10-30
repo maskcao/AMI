@@ -6,6 +6,7 @@ import { emptyDashboardPayload } from '@/analytics/normalize'
 import { KNOWLEDGE_DETAILS } from '@/mock/knowledge'
 import { INTEL_DETAILS } from '@/mock/intel'
 import { malwareClassLabel, type MalwareClass } from '@/constants/malware'
+import { malwareRefClass } from '@/utils/malware-ref'
 
 export interface CountItem {
   name: string
@@ -232,6 +233,10 @@ export function buildAnalyticsSnapshot() {
     industryDist: countBy(
       KNOWLEDGE_DETAILS.flatMap((k) => k.targetIndustries.map((i) => ({ name: i }))),
     ),
+    activeActorDist: buildThreatActorList()
+      .map((a) => ({ name: a.name, count: a.knowledgeCount }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'))
+      .slice(0, 10),
     matrixDist: countBy(KNOWLEDGE_DETAILS.map((k) => ({ name: k.attackMatrix }))),
     malwareClassDist: countBy(
       malware.map((m) => ({ name: malwareClassLabel(m.class) })),
@@ -314,14 +319,15 @@ export function buildMalwareRows(): MalwareRow[] {
   const map = new Map<string, MalwareRowDraft>()
   for (const k of KNOWLEDGE_DETAILS) {
     for (const m of k.malware) {
-      const key = `${m.name}|${m.class}`
+      const cls = malwareRefClass(m) || ('other' as MalwareClass)
+      const key = `${m.name}|${cls}`
       const existing = map.get(key)
       if (existing) {
         existing.knowledge.push(ref(k.id, k.title))
       } else {
         map.set(key, {
           name: m.name,
-          class: m.class,
+          class: cls,
           knowledge: [ref(k.id, k.title)],
         })
       }

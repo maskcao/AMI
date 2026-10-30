@@ -45,5 +45,5 @@ func ExpandListPageURLs(cfg SourceConfig) []string {
 }
 
 func ScrollPaginationError() error {
-	return fmt.Errorf("pagination.type=scroll requires Playwright render (not enabled); use path pagination or set pagination.type=path with path_template")
+	return fmt.Errorf("pagination.type=scroll requires Playwright render (not enabled); for WeChat albums use pagination.type=wechat_album")
 }

@@ -150,6 +150,27 @@ async function confirmMerge() {
   }
 }
 
+async function mergeIntoDup(targetId: number) {
+  if (!detail.value) return
+  await ElMessageBox.confirm(
+    `将把当前知识 #${detail.value.id} 的支撑情报合并到 #${targetId}，并删除当前条目。`,
+    '合并疑似重复知识',
+    { type: 'warning' },
+  )
+  saving.value = true
+  try {
+    const ok = await mergeKnowledge({ sourceId: detail.value.id, targetId })
+    if (ok) {
+      ElMessage.success('合并完成')
+      router.push({ name: 'knowledge-detail', params: { id: String(targetId) } })
+    } else {
+      ElMessage.error('合并失败')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
 function scrollToSummary() {
   document.getElementById('knowledge-summary-edit')?.scrollIntoView({ behavior: 'smooth' })
 }
@@ -199,6 +220,27 @@ onMounted(load)
         </div>
 
         <KnowledgePipelineCard :pipeline="detail.pipeline" />
+
+        <el-card v-if="detail.dupCandidates?.length" shadow="never" class="dup-card">
+          <div class="dup-header">
+            <el-tag type="danger" size="small" effect="plain">疑似重复</el-tag>
+            <span>发现 {{ detail.dupCandidates.length }} 条高度相似的知识，可合并去重。</span>
+          </div>
+          <ul class="dup-list">
+            <li v-for="c in detail.dupCandidates" :key="c.id">
+              <el-link
+                type="primary"
+                class="dup-title"
+                @click="router.push({ name: 'knowledge-detail', params: { id: String(c.id) } })"
+              >
+                #{{ c.id }} {{ c.title }}
+              </el-link>
+              <el-tag size="small" type="warning" effect="plain">{{ Math.round(c.score * 100) }}% 相似</el-tag>
+              <span class="dup-reasons">{{ c.reasons.join(' · ') || '综合相似' }}</span>
+              <el-button size="small" type="warning" plain @click="mergeIntoDup(c.id)">并入该条</el-button>
+            </li>
+          </ul>
+        </el-card>
 
         <el-card shadow="never" class="meta-card">
           <el-descriptions :column="3" border size="small">
@@ -349,6 +391,39 @@ onMounted(load)
 .meta-card,
 .summary-card {
   margin-bottom: 16px;
+}
+.dup-card {
+  margin-bottom: 16px;
+}
+.dup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+.dup-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.dup-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.dup-title {
+  max-width: 420px;
+}
+.dup-reasons {
+  color: #909399;
+  font-size: 12px;
+  flex: 1;
+  min-width: 120px;
 }
 .summary-header {
   display: flex;

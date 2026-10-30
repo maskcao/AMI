@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Server) analyticsBundle(w http.ResponseWriter, r *http.Request) {
-	b, err := analytics.BuildBundle(s.DB)
+	b, err := analytics.BuildBundleCached(s.DB)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
@@ -18,7 +18,7 @@ func (s *Server) analyticsBundle(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) actorProfile(w http.ResponseWriter, r *http.Request) {
 	slug := chi.URLParam(r, "slug")
-	b, err := analytics.BuildBundle(s.DB)
+	b, err := analytics.BuildBundleCached(s.DB)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return

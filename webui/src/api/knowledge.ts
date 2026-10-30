@@ -14,6 +14,7 @@ import type {
   KnowledgeSummary,
   KnowledgeUpdatePayload,
 } from '@/types/knowledge'
+import { earliestDisclosedAt } from '@/utils/disclosed-at'
 import { computeNeedsReview } from '@/utils/knowledge-review'
 import { normalizeMalwareRefs } from '@/utils/malware-ref'
 
@@ -36,6 +37,7 @@ function toSummary(d: KnowledgeDetail): KnowledgeSummary {
     threatActors: d.threatActors,
     qualityScore: d.qualityScore,
     intelCount: d.intelCount,
+    disclosedAt: earliestDisclosedAt(d.linkedIntel),
     updatedAt: d.updatedAt,
     dimensions: d.dimensions,
   }
@@ -71,6 +73,7 @@ export async function listKnowledge(
     const q = new URLSearchParams()
     if (params.q?.trim()) q.set('q', params.q.trim())
     if (params.review === 'needs_review') q.set('needsReview', 'true')
+    if (params.review === 'llm_failed') q.set('llmFailed', 'true')
     if (params.review === 'published') q.set('status', 'published')
     if (params.review === 'draft') q.set('status', 'draft')
     if (params.matrix) q.set('matrix', params.matrix)
@@ -174,6 +177,20 @@ export async function publishKnowledge(id: number): Promise<KnowledgeDetail | nu
     }
   }
   return delay(updateKnowledgeInStore(id, { status: 'published' }))
+}
+
+export async function retryLLMFailed(limit = 200): Promise<{ requeued: number; remaining: number } | null> {
+  if (USE_API) {
+    try {
+      return await apiFetch<{ requeued: number; remaining: number }>(
+        `/api/v1/intel/llm-retry?limit=${limit}`,
+        { method: 'POST' },
+      )
+    } catch {
+      return null
+    }
+  }
+  return { requeued: 0, remaining: 0 }
 }
 
 export async function mergeKnowledge(payload: KnowledgeMergePayload): Promise<boolean> {

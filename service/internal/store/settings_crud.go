@@ -10,22 +10,38 @@ import (
 
 type CollectSourceFull struct {
 	CollectSourceRow
-	ConfigJSON string
+	ConfigJSON             string
+	BatchUnlocked          bool
+	PilotArticlePassedAt   sql.NullString
+	PilotListPassedAt      sql.NullString
 }
 
-func (d *DB) GetCollectSource(id string) (*CollectSourceFull, error) {
-	row := d.QueryRow(`SELECT id, name, type, enabled, schedule_cron, schedule_label, source_label, config_json, last_run_at, last_status, last_error
-		FROM collect_source WHERE id = ?`, id)
+// GetCollectSourceByName finds a source by display name or id.
+func (d *DB) GetCollectSourceByName(name string) (*CollectSourceFull, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, nil
+	}
+	row := d.QueryRow(`SELECT `+collectSourceSelectSQL+` FROM collect_source WHERE name = ? OR id = ? LIMIT 1`, name, name)
 	var r CollectSourceFull
-	var en int
-	if err := row.Scan(&r.ID, &r.Name, &r.Type, &en, &r.ScheduleCron, &r.ScheduleLabel, &r.SourceLabel, &r.ConfigJSON,
-		&r.LastRunAt, &r.LastStatus, &r.LastError); err != nil {
+	if err := scanCollectSourceFull(row, &r); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, err
 	}
-	r.Enabled = en == 1
+	return &r, nil
+}
+
+func (d *DB) GetCollectSource(id string) (*CollectSourceFull, error) {
+	row := d.QueryRow(`SELECT `+collectSourceSelectSQL+` FROM collect_source WHERE id = ?`, id)
+	var r CollectSourceFull
+	if err := scanCollectSourceFull(row, &r); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
 	return &r, nil
 }
 
@@ -36,6 +52,25 @@ type CollectSourcePatch struct {
 	ScheduleLabel *string
 	SourceLabel   *string
 	ConfigJSON    *string
+}
+
+// collectConfigIngestFingerprint keys that affect list/article discovery; tuning-only fields are ignored.
+func collectConfigIngestFingerprint(raw string) string {
+	var m map[string]any
+	if err := json.Unmarshal([]byte(raw), &m); err != nil {
+		return raw
+	}
+	delete(m, "max_items_per_run")
+	delete(m, "delay_ms")
+	delete(m, "timeout_sec")
+	delete(m, "title_blocklist")
+	if pag, ok := m["pagination"].(map[string]any); ok {
+		delete(pag, "max_pages")
+		delete(pag, "scroll_steps")
+		delete(pag, "scroll_wait_ms")
+	}
+	b, _ := json.Marshal(m)
+	return string(b)
 }
 
 func (d *DB) UpdateCollectSource(id string, p CollectSourcePatch) error {
@@ -75,6 +110,9 @@ func (d *DB) UpdateCollectSource(id string, p CollectSourcePatch) error {
 	if p.ConfigJSON != nil {
 		if !json.Valid([]byte(*p.ConfigJSON)) {
 			return fmt.Errorf("invalid config json")
+		}
+		if cfg != *p.ConfigJSON && collectConfigIngestFingerprint(cfg) != collectConfigIngestFingerprint(*p.ConfigJSON) {
+			_ = d.ResetCollectSourcePilot(id)
 		}
 		cfg = *p.ConfigJSON
 	}
@@ -117,8 +155,8 @@ func (d *DB) CreateCollectSource(c CollectSourceCreate) (string, error) {
 	cron := sql.NullString{String: strings.TrimSpace(c.ScheduleCron), Valid: strings.TrimSpace(c.ScheduleCron) != ""}
 	label := sql.NullString{String: strings.TrimSpace(c.ScheduleLabel), Valid: strings.TrimSpace(c.ScheduleLabel) != ""}
 	srcLabel := strings.TrimSpace(c.SourceLabel)
-	_, err := d.Exec(`INSERT INTO collect_source (id, name, type, enabled, schedule_cron, schedule_label, source_label, config_json, last_status, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'never', ?)`,
+	_, err := d.Exec(`INSERT INTO collect_source (id, name, type, enabled, schedule_cron, schedule_label, source_label, config_json, last_status, updated_at, batch_unlocked)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'never', ?, 0)`,
 		id, name, typ, en, cron, label, srcLabel, cfg, nowRFC())
 	return id, err
 }
@@ -147,8 +185,8 @@ func (d *DB) SetCollectSourceRunResult(id, status, errMsg string) error {
 }
 
 func (d *DB) ListEnabledCollectSources() ([]CollectSourceFull, error) {
-	rows, err := d.Query(`SELECT id, name, type, enabled, schedule_cron, schedule_label, source_label, config_json, last_run_at, last_status, last_error
-		FROM collect_source WHERE enabled = 1 ORDER BY name`)
+	rows, err := d.Query(`SELECT `+collectSourceSelectSQL+`
+		FROM collect_source WHERE enabled = 1 AND batch_unlocked = 1 ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -156,12 +194,9 @@ func (d *DB) ListEnabledCollectSources() ([]CollectSourceFull, error) {
 	var out []CollectSourceFull
 	for rows.Next() {
 		var r CollectSourceFull
-		var en int
-		if err := rows.Scan(&r.ID, &r.Name, &r.Type, &en, &r.ScheduleCron, &r.ScheduleLabel, &r.SourceLabel, &r.ConfigJSON,
-			&r.LastRunAt, &r.LastStatus, &r.LastError); err != nil {
+		if err := scanCollectSourceFull(rows, &r); err != nil {
 			return nil, err
 		}
-		r.Enabled = en == 1
 		out = append(out, r)
 	}
 	return out, rows.Err()

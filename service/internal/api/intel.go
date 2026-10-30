@@ -28,9 +28,14 @@ func (s *Server) listIntel(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	intelIDs := make([]int64, len(rows))
+	for i := range rows {
+		intelIDs[i] = rows[i].ID
+	}
+	actorsByIntel, _ := s.DB.ThreatActorsByIntelIDs(intelIDs)
 	items := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
-		items = append(items, intelSummary(s.DB, row))
+		items = append(items, intelSummary(s.DB, row, actorsByIntel[row.ID]))
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items, "total": total})
 }
@@ -67,6 +72,7 @@ func (s *Server) getIntelOriginal(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		b = prepareSnapshotHTML(b, r, id)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(b)
 		return
@@ -160,10 +166,13 @@ func (s *Server) searchIOC(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, hits)
 }
 
-func intelSummary(db *store.DB, row store.IntelRow) map[string]any {
+func intelSummary(db *store.DB, row store.IntelRow, threatActors []string) map[string]any {
 	kids, _ := db.KnowledgeIDsForIntel(row.ID)
 	if kids == nil {
 		kids = []int64{}
+	}
+	if threatActors == nil {
+		threatActors = []string{}
 	}
 	iocN, _ := db.IOCCount(row.ID)
 	m := map[string]any{
@@ -179,6 +188,8 @@ func intelSummary(db *store.DB, row store.IntelRow) map[string]any {
 		"knowledgeAction":   row.KnowledgeAction,
 		"extractConfidence": nullFloatJSON(row.ExtractConfidence),
 		"iocCount":          iocN,
+		"threatActors":      threatActors,
+		"stopRequested":     row.StopRequested,
 	}
 	if row.PipelineError.Valid {
 		m["pipelineError"] = row.PipelineError.String
@@ -187,7 +198,8 @@ func intelSummary(db *store.DB, row store.IntelRow) map[string]any {
 }
 
 func (s *Server) intelDetail(row *store.IntelRow, includeFullHTML bool) (map[string]any, error) {
-	m := intelSummary(s.DB, *row)
+	actors, _ := s.DB.ThreatActorsByIntelIDs([]int64{row.ID})
+	m := intelSummary(s.DB, *row, actors[row.ID])
 	m["sourceUrl"] = row.SourceURL
 	iocs, _ := s.DB.IOCsForIntel(row.ID)
 	figures, _ := s.DB.FiguresForIntel(row.ID)

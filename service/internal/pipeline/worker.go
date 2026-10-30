@@ -47,10 +47,21 @@ func (w *Worker) tick() {
 		if jobID == 0 {
 			return
 		}
-		if err := w.runStage(jobID, intelID, stage); err != nil {
-			log.Printf("pipeline intel=%d stage=%s: %v", intelID, stage, err)
-			opslog.Error("pipeline", err.Error(), fmt.Sprintf("intelId=%d stage=%s", intelID, stage))
-			_ = w.DB.FailJob(jobID, intelID, err.Error())
+		if stop, err := w.DB.IntelStopRequested(intelID); err == nil && stop {
+			_ = w.DB.CompleteJob(jobID)
+			_ = w.DB.ApplyIntelStop(intelID)
+			continue
+		}
+		stageErr := w.runStage(jobID, intelID, stage)
+		if stop, _ := w.DB.IntelStopRequested(intelID); stop {
+			_ = w.DB.CompleteJob(jobID)
+			_ = w.DB.ApplyIntelStop(intelID)
+			continue
+		}
+		if stageErr != nil {
+			log.Printf("pipeline intel=%d stage=%s: %v", intelID, stage, stageErr)
+			opslog.Error("pipeline", stageErr.Error(), fmt.Sprintf("intelId=%d stage=%s", intelID, stage))
+			_ = w.DB.FailJob(jobID, intelID, stageErr.Error())
 		} else {
 			_ = w.DB.CompleteJob(jobID)
 		}
@@ -103,18 +114,23 @@ func (w *Worker) doParse(intelID int64) error {
 	if err := w.DB.UpdateIntelAfterParse(intelID, snip, parseVer, mdRel); err != nil {
 		return err
 	}
-	if htmlTitle := ExtractTitleFromHTML(html); IsPlausibleTitle(htmlTitle) {
+	if disclosed := ExtractDisclosedAtFromHTML(html); disclosed != "" {
+		_ = w.DB.UpdateIntelDisclosedAt(intelID, disclosed)
+	}
+	titleOpts := TitleOptsForIntel(w.DB, row.CollectSourceName, row.SourceURL)
+	bl := titleOpts.blocklist()
+	if htmlTitle := ExtractTitleFromHTML(html, titleOpts); isPlausibleWithBlocklist(htmlTitle, bl) {
 		if htmlTitle != row.Title {
 			_ = w.DB.UpdateIntelTitle(intelID, htmlTitle)
 		}
-	} else if ShouldRefreshIntelTitle(row.Title, row.SourceURL, htmlTitle) && htmlTitle != "" {
+	} else if ShouldRefreshIntelTitle(row.Title, row.SourceURL, htmlTitle, titleOpts) && htmlTitle != "" {
 		_ = w.DB.UpdateIntelTitle(intelID, htmlTitle)
-	} else if !IsPlausibleTitle(row.Title) {
+	} else if !isPlausibleWithBlocklist(row.Title, bl) {
 		if t := TitleFromURL(row.SourceURL); t != "" {
 			_ = w.DB.UpdateIntelTitle(intelID, t)
 		}
 	}
-	_ = SyncFiguresFromHTML(w.Files, w.DB, intelID, row.SourceURL, raw)
+	_ = SyncFiguresFromHTML(w.Files, w.DB, intelID, row.SourceURL, []byte(html))
 	return w.DB.EnqueueJob(intelID, "extract")
 }
 
@@ -137,7 +153,8 @@ func (w *Worker) doExtract(intelID int64) error {
 	}
 
 	rawHTML, _ := w.Files.ReadRaw(intelID, 1)
-	title := ResolveIntelTitle(row.Title, row.SourceURL, rawHTML)
+	titleOpts := TitleOptsForIntel(w.DB, row.CollectSourceName, row.SourceURL)
+	title := ResolveIntelTitle(row.Title, row.SourceURL, rawHTML, titleOpts)
 	if title != row.Title {
 		_ = w.DB.UpdateIntelTitle(intelID, title)
 		row.Title = title
@@ -202,11 +219,13 @@ func (w *Worker) doExtract(intelID int64) error {
 			pl, _ = store.ParsePayload(existing.PayloadJSON)
 		}
 		pl = applyEnrichToPayload(pl, enrichResult, cves)
+		pl.ThreatActors = mergeThreatActors(pl.ThreatActors, ExtractThreatActors(title+"\n"+text))
 		kTitle := pickKnowledgeTitle(title, existing)
 		_ = w.DB.UpdateKnowledgeSummary(kid, kTitle, ai.Summary, pl)
 	} else {
 		industries := []string{"互联网"}
 		pl := applyEnrichToPayload(store.KnowledgePayload{Techniques: []map[string]any{}}, enrichResult, cves)
+		pl.ThreatActors = mergeThreatActors(pl.ThreatActors, ExtractThreatActors(title+"\n"+text))
 		var err error
 		kid, err = w.DB.CreateKnowledge(row.Title, ai.Summary, "Enterprise", industries, pl)
 		if err != nil {
@@ -226,15 +245,15 @@ func (w *Worker) doExtract(intelID int64) error {
 }
 
 func pickKnowledgeTitle(intelTitle string, existing *store.KnowledgeRow) string {
-	if IsPlausibleTitle(intelTitle) {
-		if existing == nil || !IsPlausibleTitle(existing.Title) || existing.Title != intelTitle {
+	if merge.ShouldMergeByTitle(intelTitle) {
+		if existing == nil || !merge.ShouldMergeByTitle(existing.Title) || existing.Title != intelTitle {
 			return intelTitle
 		}
 	}
-	if existing != nil && IsPlausibleTitle(existing.Title) {
+	if existing != nil && merge.ShouldMergeByTitle(existing.Title) {
 		return existing.Title
 	}
-	if IsPlausibleTitle(intelTitle) {
+	if merge.ShouldMergeByTitle(intelTitle) {
 		return intelTitle
 	}
 	return NormalizeTitle(intelTitle)

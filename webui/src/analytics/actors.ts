@@ -148,13 +148,30 @@ export function buildThreatActorProfile(actorName: string): ThreatActorProfile |
   }
 }
 
+function normalizeProfile(p: ThreatActorProfile): ThreatActorProfile {
+  const arr = <T>(v: T[] | null | undefined): T[] => v ?? []
+  return {
+    ...p,
+    aliases: arr(p.aliases),
+    targetIndustries: arr(p.targetIndustries),
+    knowledge: arr(p.knowledge),
+    techniques: arr(p.techniques),
+    tools: arr(p.tools),
+    infrastructure: arr(p.infrastructure),
+    malware: arr(p.malware),
+    vulnerabilities: arr(p.vulnerabilities),
+    matrices: arr(p.matrices),
+  }
+}
+
 export function getThreatActorProfileBySlug(slug: string): ThreatActorProfile | null {
   const b = getAnalyticsBundle()
   if (b?.actorProfiles?.[slug]) {
-    return b.actorProfiles[slug] as ThreatActorProfile
+    return normalizeProfile(b.actorProfiles[slug] as ThreatActorProfile)
   }
   try {
-    return buildThreatActorProfile(slugToActorName(slug))
+    const built = buildThreatActorProfile(slugToActorName(slug))
+    return built ? normalizeProfile(built) : null
   } catch {
     return null
   }

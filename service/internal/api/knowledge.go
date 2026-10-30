@@ -23,6 +23,9 @@ func (s *Server) listKnowledge(w http.ResponseWriter, r *http.Request) {
 		t := true
 		p.NeedsReview = &t
 	}
+	if q.Get("llmFailed") == "true" {
+		p.LLMFailed = true
+	}
 	rows, total, err := s.DB.ListKnowledge(p)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
@@ -53,6 +56,10 @@ func knowledgeSummary(row store.KnowledgeRow) map[string]any {
 	var industries []string
 	_ = json.Unmarshal([]byte(row.TargetIndustriesJSON), &industries)
 	pl, _ := store.ParsePayload(row.PayloadJSON)
+	var dupCandidates []store.DupCandidate
+	if row.DupCandidatesJSON != "" {
+		_ = json.Unmarshal([]byte(row.DupCandidatesJSON), &dupCandidates)
+	}
 	dims := map[string]int{
 		"techniques":      len(pl.Techniques),
 		"tools":           len(pl.Tools),
@@ -72,6 +79,9 @@ func knowledgeSummary(row store.KnowledgeRow) map[string]any {
 		"threatActors":     emptyThreatActors(pl.ThreatActors),
 		"qualityScore":     row.QualityScore,
 		"intelCount":       row.IntelCount,
+		"disclosedAt":      nullStrJSON(row.EarliestDisclosedAt),
+		"enrichVersion":    nullStrJSON(row.EnrichVersion),
+		"dupCandidates":    emptyDupCandidates(dupCandidates),
 		"updatedAt":        row.UpdatedAt,
 		"dimensions":       dims,
 	}
@@ -80,6 +90,13 @@ func knowledgeSummary(row store.KnowledgeRow) map[string]any {
 func emptyThreatActors(s []string) []string {
 	if s == nil {
 		return []string{}
+	}
+	return s
+}
+
+func emptyDupCandidates(s []store.DupCandidate) []store.DupCandidate {
+	if s == nil {
+		return []store.DupCandidate{}
 	}
 	return s
 }

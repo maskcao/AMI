@@ -46,6 +46,9 @@ func (s *Scheduler) tickDue() {
 		if src.Type == "manual_upload" {
 			continue
 		}
+		if !src.BatchUnlocked {
+			continue
+		}
 		lastRun := ""
 		if src.LastRunAt.Valid {
 			lastRun = src.LastRunAt.String

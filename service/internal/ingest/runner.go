@@ -17,6 +17,7 @@ type RunResult struct {
 	Failed   int `json:"failed"`
 }
 
+// RunCollectSource runs a full collect for the source (caller should enforce pilot gate when needed).
 func RunCollectSource(db *store.DB, files *artifacts.Store, sourceID string) (*RunResult, error) {
 	src, err := db.GetCollectSource(sourceID)
 	if err != nil {
